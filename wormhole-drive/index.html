@@ -105,13 +105,13 @@ const GROUPS=[
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
 ];
 const P={},DEF={},CTL={};
-const MT=v=>30*v*v*v;
-function disp(id,v,st){if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
+const MT=v=>30*v*v*v,CY=v=>1+119*v*v*v;
+function disp(id,v,st){if(id==='cyc'){const t=CY(v);return t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){const pre=document.createElement('div');pre.className='grp';pre.innerHTML='<h2>Presets</h2><div class="presets" id="presets"></div>';panel.appendChild(pre);
   const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
-  GROUPS.unshift(['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',5,120,1,25]]]);
+  GROUPS.unshift(['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.005,.56]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
       if(Array.isArray(c[2])){row.innerHTML='<label for="k_'+id+'">'+lab+'</label><select id="k_'+id+'">'+c[2].map((o,i)=>'<option value="'+i+'">'+o+'</option>').join('')+'</select><span></span>';
@@ -144,7 +144,7 @@ function morphTo(t){const dur=MT(P.mtime);palFrom=palNow?palNow.map(c=>c.slice()
   for(const k of SELS)if(k in t)CTL[k].set(t[k]);
   if(dur<=0){for(const k in t){if(k==='seed')seed=t.seed;else if(CTL[k]&&!SELS.includes(k))CTL[k].set(t[k]);}morph=null;palFrom=null;return;}
   morph={from:current(),to:t,t0:performance.now(),dur:dur*1000};}
-function morphStep(now){if(!morph)return 1;let k=Math.min(1,(now-morph.t0)/morph.dur);const e=k*k*(3-2*k);
+function morphStep(now){if(!morph)return 1;let k=Math.min(1,(now-morph.t0)/morph.dur);const q=1-(1-k)*(1-k)*(1-k),e=q*q*q*(q*(q*6-15)+10);
   for(const key in morph.to){if(SELS.includes(key))continue;const a=morph.from[key];let b=morph.to[key];if(key==='seed'){const T=6.2832;b=a+((((b-a)%T)+T*1.5)%T-T*.5);}if(a===undefined)continue;const v=a+(b-a)*e;
     if(key==='seed')seed=v;else if(CTL[key])CTL[key].raw(v);}
   if(k>=1){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].set(morph.to[key]);morph=null;}return e;}
@@ -299,7 +299,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   if(!paused){if(sp>.01)apprT+=dt;else apprT=0;}const appr=1-Math.exp(-apprT/12);
   const me=morphStep(now);const tgtPal=PALS[P.pal];
   palNow=(morph&&palFrom)?tgtPal.map((c,i)=>c.map((x,j)=>palFrom[i][j]+(x-palFrom[i][j])*me)):tgtPal.map(c=>c.slice());
-  if(cycleOn&&snaps.length>1&&!paused){cycleT+=dt;if(cycleT>P.cyc){recall((snapOn+1)%snaps.length);}}
+  if(cycleOn&&snaps.length>1&&!paused){cycleT+=dt;if(cycleT>CY(P.cyc)){recall((snapOn+1)%snaps.length);}}
   const pal=palNow,W=cv.width,H=cv.height;
   useProg(progS);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[0].f);
   gl.uniform2f(US.res,W,H);gl.uniform2f(US.look,lookX,lookY);gl.uniform2f(US.shake,sh[0],sh[1]);
