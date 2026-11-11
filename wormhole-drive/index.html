@@ -61,6 +61,8 @@ select{font:inherit;color:var(--fg);background:#16130f;border:1px solid var(--li
 .hint{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));color:var(--dim);font-size:11px;pointer-events:none}
 body.hideui .top,body.hideui aside,body.hideui .hint{opacity:0;pointer-events:none}
 body.hideui .top *,body.hideui aside *{pointer-events:none}
+#showBtn{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));z-index:4;opacity:0;pointer-events:none;transition:opacity .3s;background:rgba(13,11,9,.5)}
+body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,body.hideui #showBtn:focus-visible{opacity:1}
 @media (max-width:640px){
   aside{top:auto;left:0;width:auto;height:52vh;border-left:none;border-top:1px solid var(--line);padding-top:14px;padding-left:max(16px,env(safe-area-inset-left,0px))}
   aside.closed{transform:translateY(105%)}
@@ -77,7 +79,6 @@ body.hideui .top *,body.hideui aside *{pointer-events:none}
   <div class="brand"><h1>wormhole drive</h1><p>A ride through curving glass tunnels of light, in the spirit of Contact, that opens onto a black hole whose gravity bends the light around it.</p></div>
   <div class="tools">
     <button id="pauseBtn" aria-label="Pause">Pause</button>
-    <button id="exitBtn">Exit to space</button>
     <button id="randBtn">Randomize</button>
     <button id="autoBtn"><span class="lamp"></span>Autopilot</button>
     <button id="fsBtn">Fullscreen</button>
@@ -86,6 +87,7 @@ body.hideui .top *,body.hideui aside *{pointer-events:none}
   </div>
 </div>
 <aside id="panel"></aside>
+<button id="showBtn" aria-label="Show the interface">Show UI</button>
 <div class="hint">Drag to look around · scroll to change the field of view · H hides the interface · R randomizes · S saves a snapshot</div>
 
 <script>
@@ -109,7 +111,7 @@ const MT=v=>30*v*v*v,CY=v=>1+119*v*v*v;
 function disp(id,v,st){if(id==='cyc'){const t=CY(v);return t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
-(function build(){const pre=document.createElement('div');pre.className='grp';pre.innerHTML='<h2>Presets</h2><div class="presets" id="presets"></div>';panel.appendChild(pre);
+(function build(){
   const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
   GROUPS.unshift(['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.005,.56]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
@@ -125,15 +127,6 @@ const panel=$('panel');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}})();
 
-const PRESETS={
- 'Machine':{speed:1.6,fov:1.1,spin:0,bank:.8,turb:.5,curve:1.2,bends:1,radius:1.6,ripple:.6,branch:.35,opac:.7,refr:.5,flow:1.2,fil:6,sharp:3,glow:1,space:0,stars:1,pal:0,hue:0,sat:1,expo:1.2,chroma:.25,inv:0,echo:0},
- 'Calm drift':{speed:.5,turb:.05,curve:.7,bends:.6,radius:2.4,ripple:.3,branch:.1,opac:.45,refr:.7,flow:.5,fil:4,sharp:2,glow:.8,chroma:.1,echo:.3,ez:.004,pal:2},
- 'Shaking pod':{speed:4,turb:1.8,curve:2,bends:1.6,radius:1.2,ripple:1.2,branch:.5,opac:.85,flow:2.6,fil:9,sharp:4,glow:1.4,chroma:.6,echo:.5,ez:.02,pal:0},
- 'Glass':{speed:1,turb:.3,curve:1.4,radius:1.8,ripple:.9,branch:.6,opac:.25,refr:1,flow:.8,fil:3,sharp:6,glow:.6,chroma:.4,pal:4,expo:1.5},
- 'Ember':{speed:2.2,turb:.8,curve:1.6,radius:1.4,ripple:.8,opac:.8,flow:1.8,fil:7,sharp:2.5,glow:1.5,pal:1,chroma:.3,echo:.4,ez:.015},
- 'Threads':{speed:1.8,turb:.6,curve:1.8,bends:1.3,radius:1.5,ripple:1.4,branch:.7,opac:.75,flow:1.5,fil:12,sharp:6,glow:1.1,pal:3,chroma:.35,echo:.35,ez:.01}
-};
-const pres=$('presets');for(const n in PRESETS){const b=document.createElement('button');b.textContent=n;b.onclick=()=>{const p={...DEF,...PRESETS[n]};const t={};for(const k in p)if(CTL[k]&&!NOSNAP.includes(k))t[k]=p[k];morphTo(t);};pres.appendChild(b);}
 function randomize(){const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),turb:rr(0,1.6),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
   v.seed=R()*100;morphTo(v);}
@@ -272,10 +265,10 @@ $('randBtn').onclick=randomize;
 $('autoBtn').onclick=()=>{auto=!auto;$('autoBtn').classList.toggle('on',auto);};
 $('beatBtn').onclick=()=>{beatOn=!beatOn;$('beatBtn').classList.toggle('on',beatOn);};
 $('exitsBtn').onclick=()=>{exitsOn=!exitsOn;$('exitsBtn').classList.toggle('on',exitsOn);};
-$('exitBtn').onclick=()=>{if(spacePhase===0){spacePhase=1;spaceTimer=0;}};
+
 $('newBtn').onclick=()=>{morphTo({seed:R()*100});};
 $('fsBtn').onclick=()=>{const el=document.documentElement;try{if(!document.fullscreenElement){const r=el.requestFullscreen&&el.requestFullscreen();if(r&&r.catch)r.catch(()=>{});}else document.exitFullscreen();}catch(_){}};
-$('hideBtn').onclick=()=>document.body.classList.toggle('hideui');
+$('hideBtn').onclick=()=>document.body.classList.toggle('hideui');$('showBtn').onclick=()=>document.body.classList.remove('hideui');
 $('panelBtn').onclick=()=>{const c=panel.classList.toggle('closed');$('panelBtn').setAttribute('aria-expanded',String(!c));};
 cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,lx:lookX,ly:lookY};cv.setPointerCapture(e.pointerId);});
 cv.addEventListener('pointermove',e=>{if(!drag)return;const s=1.6/innerHeight;lookX=Math.max(-1.2,Math.min(1.2,drag.lx-(e.clientX-drag.x)*s));lookY=Math.max(-.9,Math.min(.9,drag.ly+(e.clientY-drag.y)*s));});
