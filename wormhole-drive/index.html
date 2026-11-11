@@ -114,7 +114,7 @@ function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?
 const panel=$('panel');
 (function build(){
   const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><div id="morphCtl"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
-  GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.001,.231]]]);
+  GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.001,.464],['cyc','Cycle every',0,1,.001,.231]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
       if(Array.isArray(c[2])){row.innerHTML='<label for="k_'+id+'">'+lab+'</label><select id="k_'+id+'">'+c[2].map((o,i)=>'<option value="'+i+'">'+o+'</option>').join('')+'</select><span></span>';
@@ -127,7 +127,7 @@ const panel=$('panel');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
-  panel.insertBefore($('k_turb').closest('.grp'),panel.firstChild);
+  const sg=$('saveSnap').closest('.grp');panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
   const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
 
 function randomize(){if(cycleOn){cycleOn=false;$('cycleBtn').classList.remove('on');}const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
