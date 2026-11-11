@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wormhole Drive</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the wormhole fills the screen; a camera-console panel docks right on desktop and becomes a bottom sheet on phones */
+:root{
+  --void:#050407;
+  --panel:rgba(13,11,9,.84);
+  --fg:#f1ebdf;
+  --dim:#9a917f;
+  --amber:#8fc4ff;
+  --line:rgba(241,235,223,.13);
+  --font-display:"Major Mono Display",ui-monospace,monospace;
+  --font-ui:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--void);color:var(--fg);font-family:var(--font-ui);font-size:12px;overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:move}
+.top{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none;
+  padding-top:max(14px,env(safe-area-inset-top,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top>*{pointer-events:auto}
+.brand{display:flex;flex-direction:column;gap:4px}
+.brand h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:clamp(20px,3.4vw,30px);letter-spacing:.02em;line-height:1}
+.brand p{margin:0;color:var(--dim);font-size:11px;max-width:40ch;line-height:1.5}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+button,.filebtn{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);height:30px;padding:0 11px;border-radius:2px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+button:hover,.filebtn:hover{border-color:rgba(143,196,255,.5)}
+button:focus-visible,.filebtn:focus-within,input:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+button.on{border-color:var(--amber);color:var(--amber)}
+.lamp{width:7px;height:7px;border-radius:50%;background:#3a332a;box-shadow:inset 0 0 0 1px #000}
+button.on .lamp{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.filebtn input{position:absolute;opacity:0;width:1px;height:1px}
+aside{position:fixed;right:0;top:0;bottom:0;width:300px;background:var(--panel);border-left:1px solid var(--line);backdrop-filter:blur(10px);overflow-y:auto;
+  padding-top:max(70px,calc(env(safe-area-inset-top,0px) + 62px));padding-bottom:max(16px,env(safe-area-inset-bottom,0px));padding-left:16px;padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px;transition:transform .25s ease}
+aside.closed{transform:translateX(105%)}
+.grp{display:flex;flex-direction:column;gap:9px}
+.grp h2{margin:0;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);display:flex;justify-content:space-between;align-items:center}
+.ctl{display:grid;grid-template-columns:78px minmax(0,1fr) 42px;align-items:center;gap:8px}
+.ctl label{color:var(--dim);font-size:11px}
+.ctl output{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
+input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
+select{font:inherit;color:var(--fg);background:#16130f;border:1px solid var(--line);height:28px;border-radius:2px;padding:0 6px;width:100%}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.row button,.row .filebtn{flex:1 1 auto;justify-content:center}
+.presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.presets button{justify-content:center;padding:0 6px}
+.note{color:var(--dim);font-size:11px;line-height:1.5;margin:0}
+.hint{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));color:var(--dim);font-size:11px;pointer-events:none}
+body.hideui .top,body.hideui aside,body.hideui .hint{opacity:0;pointer-events:none}
+body.hideui .top *,body.hideui aside *{pointer-events:none}
+@media (max-width:640px){
+  aside{top:auto;left:0;width:auto;height:52vh;border-left:none;border-top:1px solid var(--line);padding-top:14px;padding-left:max(16px,env(safe-area-inset-left,0px))}
+  aside.closed{transform:translateY(105%)}
+  .brand p,.hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){aside{transition:none}}
+</style>
+</head>
+<body>
+
+
+<canvas id="c" aria-label="Flying through a curving translucent wormhole"></canvas>
+<div class="top">
+  <div class="brand"><h1>wormhole drive</h1><p>A ride through curving glass tunnels of light, in the spirit of Contact, that opens onto a black hole whose gravity bends the light around it.</p></div>
+  <div class="tools">
+    <button id="pauseBtn" aria-label="Pause">Pause</button>
+    <button id="exitBtn">Exit to space</button>
+    <button id="randBtn">Randomize</button>
+    <button id="autoBtn"><span class="lamp"></span>Autopilot</button>
+    <button id="fsBtn">Fullscreen</button>
+    <button id="hideBtn">Hide UI</button>
+    <button id="panelBtn" aria-expanded="true" aria-controls="panel">Controls</button>
+  </div>
+</div>
+<aside id="panel"></aside>
+<div class="hint">Drag to look around · scroll to change the field of view · H hides the interface · R randomizes</div>
+
+<script>
+const $=id=>document.getElementById(id),R=Math.random,pick=a=>a[(R()*a.length)|0];
+const cv=$('c');
+const gl=cv.getContext('webgl',{antialias:false,premultipliedAlpha:false});
+
+const GROUPS=[
+ ['Flight',[['speed','Speed',-2,8,.01,1.6],['fov','Field of view',.4,2.5,.01,1.1],['spin','Spin',-2,2,.01,0],['bank','Banking',0,2,.01,.8],['turb','Turbulence',0,2,.01,.5]]],
+ ['Tunnel',[['curve','Curves',0,3,.01,1.2],['bends','Bendiness',.2,3,.01,1],['radius','Width',.6,4,.01,1.6],['ripple','Ripple',0,2,.01,.6],['branch','Branching',0,1,.01,.35]]],
+ ['Walls',[['opac','Opacity',0,1,.01,.7],['refr','Refraction',0,1,.01,.5],['flow','Energy flow',0,4,.01,1.2],['fil','Filaments',1,14,1,6],['sharp','Sharpness',1,8,.1,3],['glow','Glow',0,2,.01,1]]],
+ ['Space',[['dest','Destination',['Black hole','Wormhole sphere','Ringed star']],['space','Open space',0,1,.01,0],['stars','Stars',0,2,.01,1],['hold','Time out there',3,30,1,9]]],
+ ['Gravity',[['mass','Mass',.4,3,.01,1],['disk','Disk glow',0,2,.01,1],['tilt','Disk tilt',-.6,.6,.01,.1],['dopp','Doppler',0,1,.01,.6],['dspin','Disk speed',0,3,.01,1]]],
+ ['Color',[['pal','Palette',['Machine','Ember','Aurora','Threads','Mono']],['hue','Hue',0,360,1,0],['sat','Saturation',0,2,.01,1],['expo','Exposure',.3,3,.01,1.2],['chroma','Fringe',0,1,.01,.25],['inv','Invert',0,1,1,0]]],
+ ['Echo',[['echo','Trails',0,.97,.01,0],['ez','Trail pull',-.05,.05,.001,.012]]],
+ ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,2,.01,1]]],
+ ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
+];
+const P={},DEF={},CTL={};
+function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
+const panel=$('panel');
+(function build(){const pre=document.createElement('div');pre.className='grp';pre.innerHTML='<h2>Presets</h2><div class="presets" id="presets"></div>';panel.appendChild(pre);
+  for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
+    for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
+      if(Array.isArray(c[2])){row.innerHTML='<label for="k_'+id+'">'+lab+'</label><select id="k_'+id+'">'+c[2].map((o,i)=>'<option value="'+i+'">'+o+'</option>').join('')+'</select><span></span>';
+        d.appendChild(row);const el=row.querySelector('select');P[id]=0;DEF[id]=0;el.onchange=()=>{P[id]=+el.value;};CTL[id]={el,set:v=>{el.value=v;P[id]=+v;}};}
+      else{const[, ,mn,mx,st,df]=c;row.innerHTML='<label for="k_'+id+'">'+lab+'</label><input type="range" id="k_'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+df+'"><output for="k_'+id+'">'+fmt(df,st)+'</output>';
+        d.appendChild(row);const el=row.querySelector('input'),out=row.querySelector('output');P[id]=df;DEF[id]=df;
+        el.oninput=()=>{P[id]=+el.value;out.textContent=fmt(P[id],st);if(id==='quality')resize();};
+        CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=fmt(P[id],st);}};}}
+    if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
+    if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn" class="on"><span class="lamp"></span>Auto exits</button></div><p class="note">Every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
+    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
+    panel.appendChild(d);}})();
+
+const PRESETS={
+ 'Machine':{speed:1.6,fov:1.1,spin:0,bank:.8,turb:.5,curve:1.2,bends:1,radius:1.6,ripple:.6,branch:.35,opac:.7,refr:.5,flow:1.2,fil:6,sharp:3,glow:1,space:0,stars:1,pal:0,hue:0,sat:1,expo:1.2,chroma:.25,inv:0,echo:0},
+ 'Calm drift':{speed:.5,turb:.05,curve:.7,bends:.6,radius:2.4,ripple:.3,branch:.1,opac:.45,refr:.7,flow:.5,fil:4,sharp:2,glow:.8,chroma:.1,echo:.3,ez:.004,pal:2},
+ 'Shaking pod':{speed:4,turb:1.8,curve:2,bends:1.6,radius:1.2,ripple:1.2,branch:.5,opac:.85,flow:2.6,fil:9,sharp:4,glow:1.4,chroma:.6,echo:.5,ez:.02,pal:0},
+ 'Glass':{speed:1,turb:.3,curve:1.4,radius:1.8,ripple:.9,branch:.6,opac:.25,refr:1,flow:.8,fil:3,sharp:6,glow:.6,chroma:.4,pal:4,expo:1.5},
+ 'Ember':{speed:2.2,turb:.8,curve:1.6,radius:1.4,ripple:.8,opac:.8,flow:1.8,fil:7,sharp:2.5,glow:1.5,pal:1,chroma:.3,echo:.4,ez:.015},
+ 'Threads':{speed:1.8,turb:.6,curve:1.8,bends:1.3,radius:1.5,ripple:1.4,branch:.7,opac:.75,flow:1.5,fil:12,sharp:6,glow:1.1,pal:3,chroma:.35,echo:.35,ez:.01}
+};
+const pres=$('presets');for(const n in PRESETS){const b=document.createElement('button');b.textContent=n;b.onclick=()=>{const p={...DEF,...PRESETS[n]};for(const k in p)if(CTL[k]&&!['quality','bpm','react','pulse'].includes(k))CTL[k].set(p[k]);};pres.appendChild(b);}
+function randomize(){const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),turb:rr(0,1.6),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
+  branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
+  for(const k in v)CTL[k].set(v[k]);seed=R()*100;}
+const PALS=[[[.32,.58,1],[.86,.95,1],[1,.66,.28]],[[1,.32,.1],[1,.82,.45],[.65,.12,.45]],[[.2,1,.62],[.62,.42,1],[.9,1,1]],[[.5,1,.3],[.78,.64,1],[1,.6,.9]],[[.7,.72,.78],[1,1,1],[.55,.55,.6]]];
+
+const VS='attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+const SCENE=`precision highp float;
+uniform vec2 res,look,shake;
+uniform float dest,mass,disk,tilt,dopp,dspin,travel,clock,roll,fov,curve,bends,radius,ripple,branch,opac,refr,flow,fil,sharp,glow,space,stars,hue,sat,expo,inv,beat,hi,mid,bank,seed;
+uniform vec3 c1,c2,c3;
+float h31(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z);}
+float fbm(vec3 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*noise(p);p=p*2.03+1.7;a*=.5;}return s;}
+vec2 path(float z){float b=bends;return vec2(sin(z*.11*b)*2.+sin(z*.27*b+seed),cos(z*.09*b)*1.6+sin(z*.23*b+seed*2.)*.8)*curve;}
+vec2 path2(float z){float k=.5+.5*sin(z*.035+seed*3.);return path(z)+vec2(sin(z*.21+seed),cos(z*.17+seed))*radius*2.2*k*branch;}
+float wallR(vec2 q,float z){float a=atan(q.y,q.x);return radius*(1.+(ripple+mid*.8)*(.18*sin(a*5.+z*.8+clock*2.)*sin(z*.3+clock)+.09*sin(a*11.-z*1.7+clock*3.))+beat*.06);}
+float tube(vec3 p){vec2 q=p.xy-path(p.z);float d=wallR(q,p.z)-length(q);
+ if(branch>.01){vec2 q2=p.xy-path2(p.z);d=max(d,wallR(q2,p.z+7.)-length(q2));}return d;}
+vec3 starfield(vec3 d){vec3 col=vec3(0.);
+ for(int i=0;i<2;i++){float sc=i==0?70.:160.;vec3 g=d*sc;vec3 c=floor(g);float h=h31(c+float(i)*17.+seed);
+  if(h>.992-.006*stars){vec3 f=fract(g)-.5;col+=mix(c2,vec3(1.),.6)*exp(-dot(f,f)*30.)*(h-.98)*45.*stars;}}
+ float n=fbm(d*2.5+seed);col+=mix(c1,c3,fbm(d*4.+3.))*pow(n,3.)*.45*stars;return col;}
+vec3 otherSky(vec3 d){vec3 c=starfield(d.zxy*1.3)*.7;float n=fbm(d*3.+7.);c+=mix(vec3(.95,.55,.3),vec3(.4,.6,1.),fbm(d*5.+2.))*pow(n,2.)*1.1;return c;}
+vec3 lens(vec3 ro,vec3 rd,vec3 fw,vec3 rt,vec3 up){float rs=mass*2.;vec3 C=ro+fw*40.;
+ vec3 N=normalize(up*cos(tilt)-fw*sin(tilt));vec3 e1=normalize(rt-N*dot(rt,N)),e2=cross(N,e1);
+ vec3 pos=(ro-C)/rs,dir=rd;vec3 hh=cross(pos,dir);float h2=dot(hh,hh);
+ vec3 acc=vec3(0.);float al=0.;bool cap=false;float cr=dest>.5?1.25:1.;
+ for(int i=0;i<150;i++){float r=length(pos);if(r<cr){cap=true;break;}
+  float stp=clamp(.06*r,.02,1.5);vec3 pp=pos;
+  dir+=-1.5*h2*pos/pow(r,5.)*stp;pos+=dir*stp;
+  if(dest<.5){float a=dot(pp,N),b=dot(pos,N);
+   if(a*b<0.){vec3 X=mix(pp,pos,a/(a-b));float rr=length(X);
+    if(rr>2.6&&rr<12.){vec3 tg=normalize(cross(N,X));float ang=atan(dot(X,e2),dot(X,e1)),tt=(rr-2.6)/9.4;
+     float turb=fbm(vec3(ang*3.-clock*dspin*10./pow(rr,1.5),rr*1.6,clock*.1));
+     vec3 hot=mix(vec3(1.,.95,.86),vec3(1.,.58,.22),smoothstep(0.,.45,tt));hot=mix(hot,vec3(.6,.16,.05),smoothstep(.45,1.,tt));
+     float beam=max(.08,1.+dopp*1.6*dot(tg,-normalize(dir)));
+     float dens=(.35+turb*1.3)*smoothstep(0.,.06,tt)*smoothstep(1.,.65,tt);
+     float a2=clamp(dens*.85,0.,1.);acc+=(1.-al)*hot*dens*disk*beam*1.7*a2;al+=(1.-al)*a2;if(al>.98)break;}}}
+  if(r>80.&&dot(pos,dir)>0.)break;}
+ vec3 bgc=cap?(dest>.5?otherSky(normalize(dir)):vec3(0.)):starfield(normalize(dir));
+ return acc+(1.-al)*bgc;}
+vec3 hueRot(vec3 c,float a){const vec3 k=vec3(.57735);float ca=cos(a);return c*ca+cross(k,c)*sin(a)+k*dot(k,c)*(1.-ca);}
+void main(){
+ vec2 uv=(gl_FragCoord.xy-.5*res)/res.y;
+ float z0=travel;vec3 ro=vec3(path(z0)+shake,z0);
+ vec3 ta=vec3(path(z0+4.),z0+4.);vec3 fw=normalize(ta-ro);
+ vec2 acc=path(z0+6.)-2.*path(z0+3.)+path(z0);float bk=-acc.x*bank*.6+roll;
+ vec3 up0=vec3(sin(bk),cos(bk),0.);vec3 rt=normalize(cross(up0,fw));vec3 up=cross(fw,rt);
+ vec3 rd=normalize(fw+(uv.x+look.x)*rt*fov*.8+(uv.y+look.y)*up*fov*.8);
+ float t=0.,gacc=0.;bool hit=false;vec3 p=ro;
+ for(int i=0;i<90;i++){p=ro+rd*t;float d=tube(p);if(d<.02){hit=true;break;}gacc+=exp(-d*2.5)*.012;t+=d*.7;if(t>60.)break;}
+ vec3 bg=starfield(rd);vec3 col=bg;
+ if(!hit)col+=c2*pow(max(dot(rd,fw),0.),30.)*.5*(1.-space);
+ if(hit){vec2 e=vec2(.02,0.);
+  vec3 n=normalize(vec3(tube(p-e.xyy)-tube(p+e.xyy),tube(p-e.yxy)-tube(p+e.yxy),tube(p-e.yyx)-tube(p+e.yyx)));
+  vec2 q=p.xy-path(p.z);float a=atan(q.y,q.x);
+  float e1=fbm(vec3(a*2.,p.z*.5-clock*flow*1.5,clock*.2));
+  float streak=pow(.5+.5*sin(a*fil+p.z*.6-clock*flow*4.+e1*6.),sharp);
+  float fila=pow(fbm(vec3(a*fil*.6,p.z*1.4-clock*flow*3.,1.)),3.)*3.;
+  vec3 wc=mix(c1,c2,streak)*(.35+streak*1.3)+c3*fila;
+  float fr=pow(1.-abs(dot(n,rd)),3.);wc+=c2*fr*.8;
+  vec3 behind=starfield(normalize(refract(rd,-n,1.-refr*.3)));
+  float op=clamp(opac*(.55+streak*.6+fr*.5),0.,1.);
+  col=mix(behind,wc*(1.+hi*.8),op)*mix(1.,exp(-t*.045),.7);}
+ col+=mix(c1,c2,.5)*gacc*glow*(1.+beat);
+ if(space>.01&&dest<1.5){col=mix(col,lens(ro,rd,fw,rt,up),space);}
+ else if(space>.01){vec3 C=ro+fw*45.+rt*12.-up*5.;vec3 N=normalize(up*1.+rt*.25+fw*.35);float dn=dot(rd,N);
+  if(abs(dn)>.001){float tt=dot(C-ro,N)/dn;if(tt>0.){vec3 P2=ro+rd*tt;float r=length(P2-C);
+   float band=smoothstep(7.,10.,r)*smoothstep(28.,20.,r);float rings=.5+.5*sin(r*2.6+fbm(P2*.15)*5.);
+   col+=mix(c3,c2,rings)*band*rings*.9*space*(.5+fbm(P2*.4+clock*.05));}}
+  vec3 sd=normalize(C-ro);float sa=max(dot(rd,sd),0.);col+=(c2*pow(sa,400.)*3.+c3*pow(sa,30.)*.5)*space;}
+ col=hueRot(col,radians(hue));float lum=dot(col,vec3(.299,.587,.114));col=mix(vec3(lum),col,sat);
+ col*=expo*(1.+beat*.4);col=1.-exp(-col*1.4);
+ col=mix(col,1.-col,inv);
+ gl_FragColor=vec4(col,1.);}`;
+const POST=`precision highp float;uniform sampler2D cur,prev;uniform vec2 res,c;uniform float echo,ez,chroma;
+void main(){vec2 uv=gl_FragCoord.xy/res;vec2 d=uv-c;
+ vec3 a=vec3(texture2D(cur,uv+d*chroma*.03).r,texture2D(cur,uv).g,texture2D(cur,uv-d*chroma*.03).b);
+ a*=1.-dot(d,d)*.6;
+ vec3 b=texture2D(prev,c+(uv-c)*(1.-ez)).rgb*echo;gl_FragColor=vec4(max(a,b),1.);}`;
+const BLIT=`precision highp float;uniform sampler2D t;uniform vec2 res;void main(){gl_FragColor=texture2D(t,gl_FragCoord.xy/res);}`;
+let progS,progP,progB,quad,US={},UP={},UB={},tgt=[];
+function compile(fs){const mk=(type,src)=>{const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));return s;};
+  const p=gl.createProgram();gl.attachShader(p,mk(gl.VERTEX_SHADER,VS));gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);return p;}
+function uni(p,names){const o={};names.forEach(n=>o[n]=gl.getUniformLocation(p,n));return o;}
+function useProg(p){gl.useProgram(p);gl.bindBuffer(gl.ARRAY_BUFFER,quad);const a=gl.getAttribLocation(p,'a');gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);}
+function mkTarget(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);gl.bindFramebuffer(gl.FRAMEBUFFER,null);return{t,f};}
+function initGL(){progS=compile(SCENE);progP=compile(POST);progB=compile(BLIT);
+  quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  US=uni(progS,['dest','mass','disk','tilt','dopp','dspin','res','look','shake','travel','clock','roll','fov','curve','bends','radius','ripple','branch','opac','refr','flow','fil','sharp','glow','space','stars','hue','sat','expo','inv','beat','hi','mid','bank','seed','c1','c2','c3']);
+  UP=uni(progP,['cur','prev','res','c','echo','ez','chroma']);UB=uni(progB,['t','res']);}
+function resize(){const d=(window.devicePixelRatio||1)*P.quality;cv.width=Math.max(2,innerWidth*d|0);cv.height=Math.max(2,innerHeight*d|0);
+  if(!gl)return;gl.viewport(0,0,cv.width,cv.height);tgt.forEach(o=>{gl.deleteTexture(o.t);gl.deleteFramebuffer(o.f);});tgt=[mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height)];}
+
+let actx=null,an=null,asrc=null,fbins=null,bass=0,mids=0,highs=0;
+$('audioIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('audioNote').textContent='Loading '+f.name+'…';
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();await actx.resume();const buf=await actx.decodeAudioData(await f.arrayBuffer());
+    if(asrc){try{asrc.stop();}catch(_){}}an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.75;fbins=new Uint8Array(an.frequencyBinCount);
+    asrc=actx.createBufferSource();asrc.buffer=buf;asrc.loop=true;asrc.connect(an);an.connect(actx.destination);asrc.start();$('audioNote').textContent='Playing '+f.name+'.';}
+  catch(err){$('audioNote').textContent='That file could not be played. Try an MP3, WAV or M4A.';}};
+$('stopAudio').onclick=()=>{if(asrc){try{asrc.stop();}catch(_){}asrc=null;an=null;$('audioNote').textContent='Track stopped.';}};
+function readAudio(){if(!an){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
+  bass=Math.max(avg(1,8),bass*.85);mids=Math.max(avg(8,48),mids*.88);highs=Math.max(avg(48,160),highs*.85);}
+
+let paused=false,beatOn=true,auto=false,exitsOn=true,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
+let sh=[0,0],shT=[0,0],shTimer=0,autoS=0,spaceTimer=0,spacePhase=0;
+$('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Play':'Pause';$('pauseBtn').setAttribute('aria-label',paused?'Play':'Pause');};
+$('randBtn').onclick=randomize;
+$('autoBtn').onclick=()=>{auto=!auto;$('autoBtn').classList.toggle('on',auto);};
+$('beatBtn').onclick=()=>{beatOn=!beatOn;$('beatBtn').classList.toggle('on',beatOn);};
+$('exitsBtn').onclick=()=>{exitsOn=!exitsOn;$('exitsBtn').classList.toggle('on',exitsOn);};
+$('exitBtn').onclick=()=>{if(spacePhase===0){spacePhase=1;spaceTimer=0;}};
+$('newBtn').onclick=()=>{seed=R()*100;};
+$('fsBtn').onclick=()=>{const el=document.documentElement;try{if(!document.fullscreenElement){const r=el.requestFullscreen&&el.requestFullscreen();if(r&&r.catch)r.catch(()=>{});}else document.exitFullscreen();}catch(_){}};
+$('hideBtn').onclick=()=>document.body.classList.toggle('hideui');
+$('panelBtn').onclick=()=>{const c=panel.classList.toggle('closed');$('panelBtn').setAttribute('aria-expanded',String(!c));};
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,lx:lookX,ly:lookY};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const s=1.6/innerHeight;lookX=Math.max(-1.2,Math.min(1.2,drag.lx-(e.clientX-drag.x)*s));lookY=Math.max(-.9,Math.min(.9,drag.ly+(e.clientY-drag.y)*s));});
+cv.addEventListener('pointerup',()=>drag=null);
+cv.addEventListener('wheel',e=>{e.preventDefault();CTL.fov.set(P.fov*(e.deltaY>0?1.05:.95));},{passive:false});
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;const k=e.key.toLowerCase();
+  if(k==='h')document.body.classList.toggle('hideui');if(k==='r')randomize();if(k===' '){e.preventDefault();$('pauseBtn').click();}});
+addEventListener('resize',resize);
+if(innerWidth<=640){panel.classList.add('closed');$('panelBtn').setAttribute('aria-expanded','false');}
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){CTL.speed.set(.4);CTL.turb.set(0);CTL.pulse.set(0);}
+
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requestAnimationFrame(frame);return;}
+  readAudio();const react=P.react;
+  const bph=((now/1000)*P.bpm/60)%1,beat=beatOn?Math.pow(Math.exp(-bph*5),1.5)*P.pulse:0;
+  if(!paused){clock+=dt;travel+=dt*P.speed*3*(1+beat*.6+bass*react*1.2);rollAcc+=dt*P.spin;
+    shTimer-=dt;if(shTimer<=0){shTimer=.05+R()*.08;const a=P.turb*.06*P.radius*(1+bass*react*2);shT=[(R()-.5)*a,(R()-.5)*a];}
+    sh[0]+=(shT[0]-sh[0])*Math.min(1,dt*18);sh[1]+=(shT[1]-sh[1])*Math.min(1,dt*18);
+    if(spacePhase===0&&exitsOn){spaceTimer+=dt;if(spaceTimer>30){spacePhase=1;spaceTimer=0;}}
+    if(spacePhase>0){spaceTimer+=dt;if(spacePhase===1){autoS=Math.min(1,spaceTimer/2.5);if(spaceTimer>2.5){spacePhase=2;spaceTimer=0;}}
+      else if(spacePhase===2){autoS=1;if(spaceTimer>P.hold){spacePhase=3;spaceTimer=0;}}else{autoS=Math.max(0,1-spaceTimer/2.5);if(spaceTimer>2.5){spacePhase=0;spaceTimer=0;autoS=0;}}}}
+  const A=clock;
+  const curve=P.curve*(auto?1+.5*Math.sin(A*.07):1),radius=P.radius*(auto?1+.35*Math.sin(A*.05+1):1),hue=P.hue+(auto?A*5:0),bends=P.bends*(auto?1+.3*Math.sin(A*.03+2):1);
+  const sp=Math.max(P.space,autoS),ss=sp*sp*(3-2*sp);
+  const pal=PALS[P.pal],W=cv.width,H=cv.height;
+  useProg(progS);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[0].f);
+  gl.uniform2f(US.res,W,H);gl.uniform2f(US.look,lookX,lookY);gl.uniform2f(US.shake,sh[0],sh[1]);
+  gl.uniform1f(US.travel,travel);gl.uniform1f(US.clock,clock);gl.uniform1f(US.roll,rollAcc+(R()-.5)*P.turb*.02);gl.uniform1f(US.fov,P.fov*(1+beat*.08+bass*react*.1));
+  gl.uniform1f(US.curve,curve*(1-ss*.6));gl.uniform1f(US.bends,bends);gl.uniform1f(US.radius,radius*(1+ss*9));gl.uniform1f(US.ripple,P.ripple);gl.uniform1f(US.branch,P.branch*(1-ss));
+  gl.uniform1f(US.opac,P.opac*(1-ss));gl.uniform1f(US.refr,P.refr);gl.uniform1f(US.flow,P.flow);gl.uniform1f(US.fil,P.fil);gl.uniform1f(US.sharp,P.sharp);gl.uniform1f(US.glow,P.glow*(1-ss*.8));
+  gl.uniform1f(US.space,ss);gl.uniform1f(US.dest,P.dest);gl.uniform1f(US.mass,P.mass);gl.uniform1f(US.disk,P.disk*(1+beat*.5+highs*react*.5));gl.uniform1f(US.tilt,P.tilt);gl.uniform1f(US.dopp,P.dopp);gl.uniform1f(US.dspin,P.dspin);gl.uniform1f(US.stars,P.stars);gl.uniform1f(US.hue,hue);gl.uniform1f(US.sat,P.sat);gl.uniform1f(US.expo,P.expo);gl.uniform1f(US.inv,P.inv);
+  gl.uniform1f(US.beat,beat+bass*react*.5);gl.uniform1f(US.hi,highs*react);gl.uniform1f(US.mid,mids*react);gl.uniform1f(US.bank,P.bank);gl.uniform1f(US.seed,seed);
+  gl.uniform3fv(US.c1,pal[0]);gl.uniform3fv(US.c2,pal[1]);gl.uniform3fv(US.c3,pal[2]);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[0].t);gl.uniform1i(UP.cur,0);
+  gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tgt[1].t);gl.uniform1i(UP.prev,1);
+  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,P.echo);gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
+  requestAnimationFrame(frame);}
+if(!gl)document.querySelector('.brand p').textContent='This browser could not start WebGL, which the wormhole needs.';else initGL();
+resize();requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
