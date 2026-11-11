@@ -108,13 +108,13 @@ const GROUPS=[
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
 ];
 const P={},DEF={},CTL={};
-const MT=v=>30*v*v*v,CY=v=>1+119*v*v*v;
+const MT=v=>30*v*v*v,CY=v=>.1+119.9*v*v*v;
 function disp(id,v,st){if(id==='cyc'){const t=CY(v);return t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){
   const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><div id="morphCtl"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
-  GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.005,.56]]]);
+  GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.001,.227]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
       if(Array.isArray(c[2])){row.innerHTML='<label for="k_'+id+'">'+lab+'</label><select id="k_'+id+'">'+c[2].map((o,i)=>'<option value="'+i+'">'+o+'</option>').join('')+'</select><span></span>';
