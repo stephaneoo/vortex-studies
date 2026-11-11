@@ -27,7 +27,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
   padding-top:max(14px,env(safe-area-inset-top,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .top>*{pointer-events:auto}
 .brand{display:flex;flex-direction:column;gap:4px}
-.brand h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:clamp(20px,3.4vw,30px);letter-spacing:.02em;line-height:1}
+.brand h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:clamp(14px,1.6vw,17px);letter-spacing:.02em;line-height:1;white-space:nowrap}
 .brand p{margin:0;color:var(--dim);font-size:11px;max-width:40ch;line-height:1.5}
 .tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 button,.filebtn{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);height:30px;padding:0 11px;border-radius:2px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
@@ -76,11 +76,10 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
 
 <canvas id="c" aria-label="Flying through a curving translucent wormhole"></canvas>
 <div class="top">
-  <div class="brand"><h1>wormhole drive</h1><p>A ride through curving glass tunnels of light, in the spirit of Contact, that opens onto a black hole whose gravity bends the light around it.</p></div>
+  <div class="brand"><h1>wormhole drive</h1></div>
   <div class="tools">
     <button id="pauseBtn" aria-label="Pause">Pause</button>
     <button id="randBtn">Randomize</button>
-    <button id="autoBtn"><span class="lamp"></span>Autopilot</button>
     <button id="fsBtn">Fullscreen</button>
     <button id="hideBtn">Hide UI</button>
     <button id="panelBtn" aria-expanded="true" aria-controls="panel">Controls</button>
@@ -112,7 +111,7 @@ function disp(id,v,st){if(id==='cyc'){const t=CY(v);return t<10?t.toFixed(2)+' s
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){
-  const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
+  const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button><button id="autoBtn"><span class="lamp"></span>Autopilot</button></div><div class="snaps" id="snaps"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall. Autopilot keeps each look slowly drifting in between.</p>';panel.appendChild(sn);
   GROUPS.unshift(['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.005,.56]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
