@@ -102,7 +102,7 @@ const GROUPS=[
  ['Space',[['dest','Destination',['Black hole','Wormhole sphere','Ringed star']],['space','Open space',0,1,.01,0],['stars','Stars',0,2,.01,1],['hold','Time out there',3,30,1,9]]],
  ['Gravity',[['mass','Mass',.4,3,.01,1],['disk','Disk glow',0,2,.01,1],['tilt','Disk tilt',-.6,.6,.01,.1],['dopp','Doppler',0,1,.01,.6],['dspin','Disk speed',0,3,.01,1]]],
  ['Color',[['pal','Palette',['Machine','Ember','Aurora','Threads','Mono']],['hue','Hue',0,360,1,0],['sat','Saturation',0,2,.01,1],['expo','Exposure',.3,3,.01,1.2],['chroma','Fringe',0,1,.01,.25],['inv','Invert',0,1,1,0]]],
- ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,1],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,6,.01,.7],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
+ ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,1],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,2,.01,.7],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
  ['Echo',[['echo','Trails',0,.97,.01,0],['ez','Trail pull',-.05,.05,.001,.012]]],
  ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,2,.01,1]]],
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
@@ -122,7 +122,7 @@ const panel=$('panel');
       else{const[, ,mn,mx,st,df]=c;row.innerHTML='<label for="k_'+id+'">'+lab+'</label><input type="range" id="k_'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+df+'"><output for="k_'+id+'">'+disp(id,df,st)+'</output>';
         d.appendChild(row);const el=row.querySelector('input'),out=row.querySelector('output');P[id]=df;DEF[id]=df;
         el.oninput=()=>{P[id]=+el.value;out.textContent=disp(id,P[id],st);if(id==='quality')resize();};
-        CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=disp(id,P[id],st);},raw:v=>{P[id]=v;el.value=v;out.textContent=disp(id,v,st);}};}}
+        CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=disp(id,P[id],st);},raw:v=>{v=Math.max(mn,Math.min(mx,v));P[id]=v;el.value=v;out.textContent=disp(id,v,st);}};}}
     if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
@@ -131,7 +131,7 @@ const panel=$('panel');
 
 function randomize(){const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
-  Object.assign(v,{flare:R()<.4?0:rr(.3,1.4),frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,3),glare:rr(0,2),ftrace:rr(0,1.5)});
+  Object.assign(v,{flare:R()<.4?0:rr(.3,1.4),frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,1.5),glare:rr(0,2),ftrace:rr(0,1.5)});
   v.seed=R()*100;morphTo(v);}
 const NOSNAP=['turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
