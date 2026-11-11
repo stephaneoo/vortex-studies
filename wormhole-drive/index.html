@@ -102,7 +102,7 @@ const GROUPS=[
  ['Space',[['dest','Destination',['Black hole','Wormhole sphere','Ringed star']],['space','Open space',0,1,.01,0],['stars','Stars',0,2,.01,1],['hold','Time out there',3,30,1,9]]],
  ['Gravity',[['mass','Mass',.4,3,.01,1],['disk','Disk glow',0,2,.01,1],['tilt','Disk tilt',-.6,.6,.01,.1],['dopp','Doppler',0,1,.01,.6],['dspin','Disk speed',0,3,.01,1]]],
  ['Color',[['pal','Palette',['Machine','Ember','Aurora','Threads','Mono']],['hue','Hue',0,360,1,0],['sat','Saturation',0,2,.01,1],['expo','Exposure',.3,3,.01,1.2],['chroma','Fringe',0,1,.01,.25],['inv','Invert',0,1,1,0]]],
- ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,1],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,2,.01,.7],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
+ ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,0],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,.6,.005,.25],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
  ['Echo',[['echo','Trails',0,.97,.01,0],['ez','Trail pull',-.05,.05,.001,.012]]],
  ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,2,.01,1]]],
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
@@ -113,7 +113,7 @@ function disp(id,v,st){if(id==='cyc'){const t=CY(v);return t<10?t.toFixed(2)+' s
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){
-  const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button><button id="autoBtn"><span class="lamp"></span>Autopilot</button></div><div class="snaps" id="snaps"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall. Autopilot keeps each look slowly drifting in between.</p>';panel.appendChild(sn);
+  const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><div id="morphCtl"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
   GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',0,1,.005,.56]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
@@ -127,13 +127,14 @@ const panel=$('panel');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
-  panel.insertBefore($('k_turb').closest('.grp'),panel.firstChild);})();
+  panel.insertBefore($('k_turb').closest('.grp'),panel.firstChild);
+  const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
 
 function randomize(){const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
-  Object.assign(v,{flare:R()<.4?0:rr(.3,1.4),frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,1.5),glare:rr(0,2),ftrace:rr(0,1.5)});
+  Object.assign(v,{flare:R()<.4?0:rr(.3,1.4),frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,.6),ftrace:rr(0,1.5)});
   v.seed=R()*100;morphTo(v);}
-const NOSNAP=['turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
+const NOSNAP=['turb','fbeat','glare','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
 function current(){const o={seed};for(const k in P)if(!NOSNAP.includes(k))o[k]=P[k];return o;}
 function morphTo(t){const dur=MT(P.mtime);palFrom=palNow?palNow.map(c=>c.slice()):null;
@@ -281,7 +282,7 @@ let flaresOn=true,camRoll=0,vpX=.5,vpY=.5,paused=false,beatOn=true,auto=false,ex
 let sh=[0,0],shT=[0,0],shTimer=0,autoS=0,spaceTimer=0,spacePhase=0;
 $('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Play':'Pause';$('pauseBtn').setAttribute('aria-label',paused?'Play':'Pause');};
 $('randBtn').onclick=randomize;
-$('autoBtn').onclick=()=>{auto=!auto;$('autoBtn').classList.toggle('on',auto);};
+
 $('beatBtn').onclick=()=>{beatOn=!beatOn;$('beatBtn').classList.toggle('on',beatOn);};
 $('exitsBtn').onclick=()=>{exitsOn=!exitsOn;$('exitsBtn').classList.toggle('on',exitsOn);};
 
