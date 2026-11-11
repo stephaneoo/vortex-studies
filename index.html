@@ -13,6 +13,12 @@ p{color:var(--dim);margin:0}
 a{display:block;border:1px solid var(--line);padding:16px 18px;color:var(--fg);text-decoration:none;border-radius:3px}
 a:hover,a:focus-visible{border-color:var(--fg);outline:none}
 a span{display:block;color:var(--dim);font-size:13px}
+h2{margin:28px 0 0;font-weight:400;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);border-top:1px solid var(--line);padding-top:24px}
+.films{display:flex;flex-direction:column;gap:18px}
+.film b{font-weight:400}
+.film i{font-style:normal;color:var(--dim);font-size:13px}
+.film p{font-size:13px;margin-top:4px}
+.film em{font-style:normal;color:var(--fg)}
 </style>
 </head>
 <body>
@@ -21,6 +27,16 @@ a span{display:block;color:var(--dim);font-size:13px}
 <p>Two real-time tunnels to fly through. Best on a computer, full screen.</p>
 <a href="slit-scan-gate/">Slit-Scan Gate<span>A slit-scan light corridor in the spirit of the 1968 star gate.</span></a>
 <a href="wormhole-drive/">Wormhole Drive<span>Curving translucent wormholes that open onto a lensing black hole.</span></a>
+
+<h2>Film inspirations</h2>
+<div class="films">
+<div class="film"><b>2001: A Space Odyssey</b> <i>· Stanley Kubrick, 1968</i>
+<p>The Star Gate sequence, made by Douglas Trumbull with a slit-scan machine: a camera creeping toward a narrow slit while backlit artwork slid behind it, one long exposure per frame, stretching flat art into an endless corridor of light. <em>→ Slit-Scan Gate</em></p></div>
+<div class="film"><b>Contact</b> <i>· Robert Zemeckis, 1997</i>
+<p>Ellie Arroway's ride through the Machine: a chain of translucent, rippling wormholes that twist and branch before opening onto another star system. <em>→ Wormhole Drive</em></p></div>
+<div class="film"><b>Interstellar</b> <i>· Christopher Nolan, 2014</i>
+<p>Gargantua, the black hole rendered from physicist Kip Thorne's equations, with its accretion disk bent up and over by gravity. It shaped the lensing at the end of each wormhole. <em>→ Wormhole Drive</em></p></div>
+</div>
 </main>
 </body>
 </html>
