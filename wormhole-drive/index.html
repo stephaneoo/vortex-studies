@@ -105,19 +105,21 @@ const GROUPS=[
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
 ];
 const P={},DEF={},CTL={};
+const MT=v=>30*v*v*v;
+function disp(id,v,st){if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){const pre=document.createElement('div');pre.className='grp';pre.innerHTML='<h2>Presets</h2><div class="presets" id="presets"></div>';panel.appendChild(pre);
   const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap">Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
-  GROUPS.unshift(['Morph',[['mtime','Morph time',0,30,.5,5],['cyc','Cycle every',5,120,1,25]]]);
+  GROUPS.unshift(['Morph',[['mtime','Morph time',0,1,.005,.55],['cyc','Cycle every',5,120,1,25]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
       if(Array.isArray(c[2])){row.innerHTML='<label for="k_'+id+'">'+lab+'</label><select id="k_'+id+'">'+c[2].map((o,i)=>'<option value="'+i+'">'+o+'</option>').join('')+'</select><span></span>';
         d.appendChild(row);const el=row.querySelector('select');P[id]=0;DEF[id]=0;el.onchange=()=>{P[id]=+el.value;};CTL[id]={el,set:v=>{el.value=v;P[id]=+v;},raw:v=>{el.value=Math.round(v);P[id]=Math.round(v);}};}
-      else{const[, ,mn,mx,st,df]=c;row.innerHTML='<label for="k_'+id+'">'+lab+'</label><input type="range" id="k_'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+df+'"><output for="k_'+id+'">'+fmt(df,st)+'</output>';
+      else{const[, ,mn,mx,st,df]=c;row.innerHTML='<label for="k_'+id+'">'+lab+'</label><input type="range" id="k_'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+df+'"><output for="k_'+id+'">'+disp(id,df,st)+'</output>';
         d.appendChild(row);const el=row.querySelector('input'),out=row.querySelector('output');P[id]=df;DEF[id]=df;
-        el.oninput=()=>{P[id]=+el.value;out.textContent=fmt(P[id],st);if(id==='quality')resize();};
-        CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=fmt(P[id],st);},raw:v=>{P[id]=v;el.value=v;out.textContent=fmt(v,st);}};}}
+        el.oninput=()=>{P[id]=+el.value;out.textContent=disp(id,P[id],st);if(id==='quality')resize();};
+        CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=disp(id,P[id],st);},raw:v=>{P[id]=v;el.value=v;out.textContent=disp(id,v,st);}};}}
     if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
@@ -138,7 +140,7 @@ function randomize(){const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(
 const NOSNAP=['quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
 function current(){const o={seed};for(const k in P)if(!NOSNAP.includes(k))o[k]=P[k];return o;}
-function morphTo(t){const dur=P.mtime;palFrom=palNow?palNow.map(c=>c.slice()):null;
+function morphTo(t){const dur=MT(P.mtime);palFrom=palNow?palNow.map(c=>c.slice()):null;
   for(const k of SELS)if(k in t)CTL[k].set(t[k]);
   if(dur<=0){for(const k in t){if(k==='seed')seed=t.seed;else if(CTL[k]&&!SELS.includes(k))CTL[k].set(t[k]);}morph=null;palFrom=null;return;}
   morph={from:current(),to:t,t0:performance.now(),dur:dur*1000};}
