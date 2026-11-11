@@ -80,6 +80,7 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
   <div class="tools">
     <button id="pauseBtn" aria-label="Pause">Pause</button>
     <button id="randBtn">Randomize</button>
+    <button id="flareBtn" class="on" aria-pressed="true"><span class="lamp"></span>Flares</button>
     <button id="fsBtn">Fullscreen</button>
     <button id="hideBtn">Hide UI</button>
     <button id="panelBtn" aria-expanded="true" aria-controls="panel">Controls</button>
@@ -270,7 +271,7 @@ $('stopAudio').onclick=()=>{if(asrc){try{asrc.stop();}catch(_){}asrc=null;an=nul
 function readAudio(){if(!an){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
   bass=Math.max(avg(1,8),bass*.85);mids=Math.max(avg(8,48),mids*.88);highs=Math.max(avg(48,160),highs*.85);}
 
-let camRoll=0,vpX=.5,vpY=.5,paused=false,beatOn=true,auto=false,exitsOn=false,apprT=0,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
+let flaresOn=true,camRoll=0,vpX=.5,vpY=.5,paused=false,beatOn=true,auto=false,exitsOn=false,apprT=0,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
 let sh=[0,0],shT=[0,0],shTimer=0,autoS=0,spaceTimer=0,spacePhase=0;
 $('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Play':'Pause';$('pauseBtn').setAttribute('aria-label',paused?'Play':'Pause');};
 $('randBtn').onclick=randomize;
@@ -289,6 +290,7 @@ cv.addEventListener('wheel',e=>{e.preventDefault();CTL.fov.set(P.fov*(e.deltaY>0
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;const k=e.key.toLowerCase();
   if(k==='h')document.body.classList.toggle('hideui');if(k==='r')randomize();if(k==='s')saveSnap();if(/^[1-9]$/.test(k))recall(+k-1);if(k===' '){e.preventDefault();$('pauseBtn').click();}});
 addEventListener('resize',resize);
+$('flareBtn').onclick=()=>{flaresOn=!flaresOn;$('flareBtn').classList.toggle('on',flaresOn);$('flareBtn').setAttribute('aria-pressed',String(flaresOn));};
 $('saveSnap').onclick=saveSnap;$('cycleBtn').onclick=()=>{cycleOn=!cycleOn;cycleT=0;$('cycleBtn').classList.toggle('on',cycleOn);};
 loadSnaps();drawSnaps();
 if(innerWidth<=640){panel.classList.add('closed');$('panelBtn').setAttribute('aria-expanded','false');}
@@ -331,7 +333,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[0].t);gl.uniform1i(UP.cur,0);
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tgt[1].t);gl.uniform1i(UP.prev,1);
-  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,P.flare*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
+  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*P.flare*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
