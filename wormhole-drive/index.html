@@ -112,7 +112,7 @@ const panel=$('panel');
         el.oninput=()=>{P[id]=+el.value;out.textContent=fmt(P[id],st);if(id==='quality')resize();};
         CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=fmt(P[id],st);}};}}
     if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
-    if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn" class="on"><span class="lamp"></span>Auto exits</button></div><p class="note">Every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
+    if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}})();
 
@@ -133,7 +133,7 @@ const PALS=[[[.32,.58,1],[.86,.95,1],[1,.66,.28]],[[1,.32,.1],[1,.82,.45],[.65,.
 const VS='attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
 const SCENE=`precision highp float;
 uniform vec2 res,look,shake;
-uniform float dest,mass,disk,tilt,dopp,dspin,travel,clock,roll,fov,curve,bends,radius,ripple,branch,opac,refr,flow,fil,sharp,glow,space,stars,hue,sat,expo,inv,beat,hi,mid,bank,seed;
+uniform float appr,dest,mass,disk,tilt,dopp,dspin,travel,clock,roll,fov,curve,bends,radius,ripple,branch,opac,refr,flow,fil,sharp,glow,space,stars,hue,sat,expo,inv,beat,hi,mid,bank,seed;
 uniform vec3 c1,c2,c3;
 float h31(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
 float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -149,7 +149,7 @@ vec3 starfield(vec3 d){vec3 col=vec3(0.);
   if(h>.992-.006*stars){vec3 f=fract(g)-.5;col+=mix(c2,vec3(1.),.6)*exp(-dot(f,f)*30.)*(h-.98)*45.*stars;}}
  float n=fbm(d*2.5+seed);col+=mix(c1,c3,fbm(d*4.+3.))*pow(n,3.)*.45*stars;return col;}
 vec3 otherSky(vec3 d){vec3 c=starfield(d.zxy*1.3)*.7;float n=fbm(d*3.+7.);c+=mix(vec3(.95,.55,.3),vec3(.4,.6,1.),fbm(d*5.+2.))*pow(n,2.)*1.1;return c;}
-vec3 lens(vec3 ro,vec3 rd,vec3 fw,vec3 rt,vec3 up){float rs=mass*2.;vec3 C=ro+fw*40.;
+vec3 lens(vec3 ro,vec3 rd,vec3 fw,vec3 rt,vec3 up){float rs=mass*2.;vec3 C=ro+fw*mix(70.,24.,appr)+rt*sin(clock*.13)*7.+up*sin(clock*.09+1.)*4.;
  vec3 N=normalize(up*cos(tilt)-fw*sin(tilt));vec3 e1=normalize(rt-N*dot(rt,N)),e2=cross(N,e1);
  vec3 pos=(ro-C)/rs,dir=rd;vec3 hh=cross(pos,dir);float h2=dot(hh,hh);
  vec3 acc=vec3(0.);float al=0.;bool cap=false;float cr=dest>.5?1.25:1.;
@@ -192,7 +192,7 @@ void main(){
   col=mix(behind,wc*(1.+hi*.8),op)*mix(1.,exp(-t*.045),.7);}
  col+=mix(c1,c2,.5)*gacc*glow*(1.+beat);
  if(space>.01&&dest<1.5){col=mix(col,lens(ro,rd,fw,rt,up),space);}
- else if(space>.01){vec3 C=ro+fw*45.+rt*12.-up*5.;vec3 N=normalize(up*1.+rt*.25+fw*.35);float dn=dot(rd,N);
+ else if(space>.01){vec3 C=ro+fw*mix(80.,30.,appr)+rt*(12.+sin(clock*.13)*7.)-up*(5.+sin(clock*.09)*4.);vec3 N=normalize(up*1.+rt*.25+fw*.35);float dn=dot(rd,N);
   if(abs(dn)>.001){float tt=dot(C-ro,N)/dn;if(tt>0.){vec3 P2=ro+rd*tt;float r=length(P2-C);
    float band=smoothstep(7.,10.,r)*smoothstep(28.,20.,r);float rings=.5+.5*sin(r*2.6+fbm(P2*.15)*5.);
    col+=mix(c3,c2,rings)*band*rings*.9*space*(.5+fbm(P2*.4+clock*.05));}}
@@ -217,7 +217,7 @@ function mkTarget(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t
   const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);gl.bindFramebuffer(gl.FRAMEBUFFER,null);return{t,f};}
 function initGL(){progS=compile(SCENE);progP=compile(POST);progB=compile(BLIT);
   quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-  US=uni(progS,['dest','mass','disk','tilt','dopp','dspin','res','look','shake','travel','clock','roll','fov','curve','bends','radius','ripple','branch','opac','refr','flow','fil','sharp','glow','space','stars','hue','sat','expo','inv','beat','hi','mid','bank','seed','c1','c2','c3']);
+  US=uni(progS,['dest','mass','disk','tilt','dopp','dspin','res','look','shake','travel','clock','roll','fov','curve','bends','radius','ripple','branch','opac','refr','flow','fil','sharp','glow','space','stars','hue','sat','expo','inv','beat','hi','mid','bank','seed','appr','c1','c2','c3']);
   UP=uni(progP,['cur','prev','res','c','echo','ez','chroma']);UB=uni(progB,['t','res']);}
 function resize(){const d=(window.devicePixelRatio||1)*P.quality;cv.width=Math.max(2,innerWidth*d|0);cv.height=Math.max(2,innerHeight*d|0);
   if(!gl)return;gl.viewport(0,0,cv.width,cv.height);tgt.forEach(o=>{gl.deleteTexture(o.t);gl.deleteFramebuffer(o.f);});tgt=[mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height)];}
@@ -232,7 +232,7 @@ $('stopAudio').onclick=()=>{if(asrc){try{asrc.stop();}catch(_){}asrc=null;an=nul
 function readAudio(){if(!an){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
   bass=Math.max(avg(1,8),bass*.85);mids=Math.max(avg(8,48),mids*.88);highs=Math.max(avg(48,160),highs*.85);}
 
-let paused=false,beatOn=true,auto=false,exitsOn=true,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
+let paused=false,beatOn=true,auto=false,exitsOn=false,apprT=0,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
 let sh=[0,0],shT=[0,0],shTimer=0,autoS=0,spaceTimer=0,spacePhase=0;
 $('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Play':'Pause';$('pauseBtn').setAttribute('aria-label',paused?'Play':'Pause');};
 $('randBtn').onclick=randomize;
@@ -266,6 +266,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   const A=clock;
   const curve=P.curve*(auto?1+.5*Math.sin(A*.07):1),radius=P.radius*(auto?1+.35*Math.sin(A*.05+1):1),hue=P.hue+(auto?A*5:0),bends=P.bends*(auto?1+.3*Math.sin(A*.03+2):1);
   const sp=Math.max(P.space,autoS),ss=sp*sp*(3-2*sp);
+  if(!paused){if(sp>.01)apprT+=dt;else apprT=0;}const appr=1-Math.exp(-apprT/12);
   const pal=PALS[P.pal],W=cv.width,H=cv.height;
   useProg(progS);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[0].f);
   gl.uniform2f(US.res,W,H);gl.uniform2f(US.look,lookX,lookY);gl.uniform2f(US.shake,sh[0],sh[1]);
@@ -273,7 +274,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   gl.uniform1f(US.curve,curve*(1-ss*.6));gl.uniform1f(US.bends,bends);gl.uniform1f(US.radius,radius*(1+ss*9));gl.uniform1f(US.ripple,P.ripple);gl.uniform1f(US.branch,P.branch*(1-ss));
   gl.uniform1f(US.opac,P.opac*(1-ss));gl.uniform1f(US.refr,P.refr);gl.uniform1f(US.flow,P.flow);gl.uniform1f(US.fil,P.fil);gl.uniform1f(US.sharp,P.sharp);gl.uniform1f(US.glow,P.glow*(1-ss*.8));
   gl.uniform1f(US.space,ss);gl.uniform1f(US.dest,P.dest);gl.uniform1f(US.mass,P.mass);gl.uniform1f(US.disk,P.disk*(1+beat*.5+highs*react*.5));gl.uniform1f(US.tilt,P.tilt);gl.uniform1f(US.dopp,P.dopp);gl.uniform1f(US.dspin,P.dspin);gl.uniform1f(US.stars,P.stars);gl.uniform1f(US.hue,hue);gl.uniform1f(US.sat,P.sat);gl.uniform1f(US.expo,P.expo);gl.uniform1f(US.inv,P.inv);
-  gl.uniform1f(US.beat,beat+bass*react*.5);gl.uniform1f(US.hi,highs*react);gl.uniform1f(US.mid,mids*react);gl.uniform1f(US.bank,P.bank);gl.uniform1f(US.seed,seed);
+  gl.uniform1f(US.beat,beat+bass*react*.5);gl.uniform1f(US.hi,highs*react);gl.uniform1f(US.mid,mids*react);gl.uniform1f(US.bank,P.bank);gl.uniform1f(US.seed,seed);gl.uniform1f(US.appr,appr);
   gl.uniform3fv(US.c1,pal[0]);gl.uniform3fv(US.c2,pal[1]);gl.uniform3fv(US.c3,pal[2]);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
