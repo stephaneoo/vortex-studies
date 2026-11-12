@@ -266,13 +266,14 @@ void main(){vec2 uv=gl_FragCoord.xy/res;vec2 d=uv-c;
   if(fstreak>.01){vec3 st=vec3(0.);vec2 ax=vec2(cos(froll),sin(froll))/asp;for(int j=-10;j<=10;j++){float fj=float(j);st+=br(uv+ax*fj*.012)*exp(-abs(fj)*.22);}fl+=st*vec3(.55,.75,1.)*.045*fstreak;}
   if(ftrace>.01){vec2 px=1./res;float l0=dot(texture2D(cur,uv+vec2(px.x*3.,0.)).rgb-texture2D(cur,uv-vec2(px.x*3.,0.)).rgb,vec3(.33)),l1=dot(texture2D(cur,uv+vec2(0.,px.y*3.)).rgb-texture2D(cur,uv-vec2(0.,px.y*3.)).rgb,vec3(.33));
    vec2 tg=normalize(vec2(-l1,l0)+1e-5);vec3 tr=vec3(0.);for(int j=-6;j<=6;j++){float fj=float(j);tr+=br(uv+tg*px*fj*5.)*exp(-abs(fj)*.3);}fl+=tr*.07*ftrace;}
-  if(glare>.01){vec3 vg=vec3(0.);float jt=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);for(int j=0;j<12;j++){float an=(float(j)+jt)*.5236;for(int k=0;k<3;k++){float rr=(float(k)+fract(jt*7.+float(j)*.37))*.08+.03;vg+=br(uv+vec2(cos(an),sin(an))*rr/asp);}}
-   fl+=vg/36.*vec3(.9,.95,1.)*1.4*glare;
+  a+=fl*flare;}
+  if(glare>.01){vec3 gfl=vec3(0.);vec2 asp=vec2(res.x/res.y,1.);vec2 gv=vp-uv;vec3 vg=vec3(0.);float jt=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);for(int j=0;j<12;j++){float an=(float(j)+jt)*.5236;for(int k=0;k<3;k++){float rr=(float(k)+fract(jt*7.+float(j)*.37))*.08+.03;vg+=br(uv+vec2(cos(an),sin(an))*rr/asp);}}
+   gfl+=vg/36.*vec3(.9,.95,1.)*1.4*glare;
    vec3 src=(br(vp)+br(vp+vec2(.02,0.))+br(vp-vec2(.02,0.))+br(vp+vec2(0.,.02))+br(vp-vec2(0.,.02)))/5.;float sl=dot(src,vec3(.33));
    vec2 dv=(uv-vp)*asp;float dr=length(dv),an=atan(dv.y,dv.x)-froll;
    float rays=pow(abs(cos(an*3.)),60.)+.6*pow(abs(cos(an*3.+.5236)),120.);
-   fl+=vec3(1.,.97,.92)*sl*glare*(rays*exp(-dr*3.5)*1.3+exp(-dr*9.)*1.6);}
-  a+=fl*flare;}
+   gfl+=vec3(1.,.97,.92)*sl*glare*(rays*exp(-dr*3.5)*1.3+exp(-dr*9.)*1.6);
+  a+=gfl;}
  vec3 b=texture2D(prev,c+(uv-c)*(1.-ez)).rgb*echo;gl_FragColor=vec4(max(a,b),1.);}`;
 const BLIT=`precision highp float;uniform sampler2D t;uniform vec2 res;void main(){gl_FragColor=texture2D(t,gl_FragCoord.xy/res);}`;
 let progS,progP,progB,quad,US={},UP={},UB={},tgt=[];
@@ -363,7 +364,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[0].t);gl.uniform1i(UP.cur,0);
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tgt[1].t);gl.uniform1i(UP.prev,1);
-  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*P.flare*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.glare,P.glare);gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
+  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*P.flare*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.glare,(flaresOn?1:0)*P.glare);gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
