@@ -136,12 +136,12 @@ const GROUPS=[
  ['Color',[['pal','Palette',['Machine','Ember','Aurora','Threads','Mono']],['hue','Hue',0,360,1,0],['sat','Saturation',0,2,.01,1],['expo','Exposure',.3,3,.01,1.2],['chroma','Fringe',0,1,.01,.25],['inv','Invert',0,1,1,0]]],
  ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,0],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,.6,.005,.25],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
  ['Echo',[['echo','Trails',0,.97,.01,0],['ez','Trail pull',-.05,.05,.001,.012]]],
- ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,3,.01,1.2],['ant','Anticipation',0,2,.01,1]]],
+ ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,3,.01,1.2],['ant','Anticipation',0,2,.01,1],['aoff','Sync offset',-200,400,5,90]]],
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
 ];
 const P={},DEF={},CTL={};
 const MT=v=>30*v*v*v,CY=v=>.02+119.98*v*v*v;
-function disp(id,v,st){if(id==='mtime'){const e=document.getElementById('k_mtime');if(e)e.style.setProperty('--p',(v*100)+'%');}if(id==='cyc'){const t=CY(v);return t<.1?(t*1000).toFixed(0)+' ms':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
+function disp(id,v,st){if(id==='aoff')return (v>0?'+':'')+Math.round(v)+' ms';if(id==='mtime'){const e=document.getElementById('k_mtime');if(e)e.style.setProperty('--p',(v*100)+'%');}if(id==='cyc'){const t=CY(v);return t<.1?(t*1000).toFixed(0)+' ms':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){
@@ -166,7 +166,7 @@ function randomize(){{const b=$('randBtn');b.classList.remove('flash');void b.of
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
   Object.assign(v,{flare:R()<.3?0:.4+Math.pow(R(),.8)*2.2,frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,.6),glare:R()<.45?0:rr(.2,3),ftrace:rr(0,1.5)});
   v.seed=R()*100;morphTo(v);}
-const NOSNAP=['ant','turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
+const NOSNAP=['aoff','ant','turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
 function current(){const o={seed};for(const k in P)if(!NOSNAP.includes(k))o[k]=P[k];return o;}
 
@@ -327,7 +327,7 @@ function analyzeTrack(buf){const sr=buf.sampleRate,hop=512,hs=hop/sr,c0=buf.getC
   const calm=new Float32Array(N);for(let i=0;i<N;i++)calm[i]=Math.max(0,Math.min(1,(med-es[i])/Math.max(1e-4,med-lo)));
   const ref=drops.map(i=>{let bi=i,bv=-1;for(let k=Math.max(1,i-Math.round(1.2/hs));k<=Math.min(N-1,i+Math.round(.3/hs));k++)if(on[k]>bv){bv=on[k];bi=k;}return bi;});
   return{hs,N,vb,vm,vh,bpm:fb,phase:fp*hs,drops:ref.map(i=>i*hs),calm,dur:buf.duration};}
-function trackFX(){if(!TA||!asrc||!abuf)return null;const lat=(actx.outputLatency||actx.baseLatency||.02);const pos=Math.max(0,trackPos()-lat+.012);
+function trackFX(){if(!TA||!asrc||!abuf)return null;const lat=(actx.outputLatency||actx.baseLatency||.02);const pos=Math.max(0,trackPos()-lat+P.aoff/1000);
   const i=Math.min(TA.N-1,Math.floor(pos/TA.hs));let build=0,impact=0;
   for(const td of TA.drops){const B=8;if(pos<td&&pos>td-B){const x=(pos-(td-B))/B;build=Math.max(build,x*x);}if(pos>=td&&pos<td+3)impact=Math.max(impact,Math.exp(-(pos-td)*2.2));}
   return{i,pos,build,impact,calm:TA.calm[i],bph:(((pos-TA.phase)*TA.bpm/60)%1+1)%1};}
