@@ -47,6 +47,19 @@ aside.closed{transform:translateX(105%)}
 .ctl label{color:var(--dim);font-size:11px}
 .ctl output{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
 input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
+#randBtn{border-color:rgba(143,196,255,.55);color:#dcecff;animation:rglow 3.2s ease-in-out infinite}
+@keyframes rglow{0%,100%{box-shadow:0 0 6px rgba(143,196,255,.25)}50%{box-shadow:0 0 18px rgba(143,196,255,.65),inset 0 0 10px rgba(143,196,255,.22)}}
+#randBtn.flash{animation:rflash .7s ease-out}
+@keyframes rflash{0%{box-shadow:0 0 34px rgba(190,222,255,1),inset 0 0 18px rgba(190,222,255,.7);background:rgba(143,196,255,.35)}100%{box-shadow:0 0 6px rgba(143,196,255,.25)}}
+@media (prefers-reduced-motion:reduce){#randBtn,#randBtn.flash{animation:none;box-shadow:0 0 12px rgba(143,196,255,.45)}}
+.ctl.big{grid-template-columns:minmax(0,1fr) auto;row-gap:4px;padding-block:4px}
+.ctl.big label{font-size:12px;color:var(--fg)}.ctl.big output{font-size:13px;color:var(--amber)}
+.ctl.big input{grid-column:1/-1;grid-row:2;-webkit-appearance:none;appearance:none;height:24px;background:transparent;cursor:pointer}
+.ctl.big input::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(var(--amber),var(--amber)) 0 0/var(--p,50%) 100% no-repeat,rgba(255,255,255,.14)}
+.ctl.big input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--amber);margin-top:-7px;box-shadow:0 0 10px rgba(143,196,255,.55)}
+.ctl.big input::-moz-range-track{height:6px;border-radius:3px;background:rgba(255,255,255,.14)}
+.ctl.big input::-moz-range-progress{height:6px;border-radius:3px;background:var(--amber)}
+.ctl.big input::-moz-range-thumb{width:20px;height:20px;border:none;border-radius:50%;background:var(--amber);box-shadow:0 0 10px rgba(143,196,255,.55)}
 select{font:inherit;color:var(--fg);background:#16130f;border:1px solid var(--line);height:28px;border-radius:2px;padding:0 6px;width:100%}
 .row{display:flex;gap:6px;flex-wrap:wrap}
 .row button,.row .filebtn{flex:1 1 auto;justify-content:center}
@@ -109,7 +122,7 @@ const GROUPS=[
 ];
 const P={},DEF={},CTL={};
 const MT=v=>30*v*v*v,CY=v=>.02+119.98*v*v*v;
-function disp(id,v,st){if(id==='cyc'){const t=CY(v);return t<.1?(t*1000).toFixed(0)+' ms':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
+function disp(id,v,st){if(id==='mtime'){const e=document.getElementById('k_mtime');if(e)e.style.setProperty('--p',(v*100)+'%');}if(id==='cyc'){const t=CY(v);return t<.1?(t*1000).toFixed(0)+' ms':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}if(id==='mtime'){const t=MT(v);return t<=0?'instant':t<10?t.toFixed(2)+' s':t.toFixed(1)+' s';}return fmt(v,st);}
 function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?3:2);}
 const panel=$('panel');
 (function build(){
@@ -127,10 +140,10 @@ const panel=$('panel');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
-  const sg=$('saveSnap').closest('.grp');panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
+  const sg=$('saveSnap').closest('.grp');{const m=$('k_mtime');m.closest('.ctl').classList.add('big');m.style.setProperty('--p',(P.mtime*100)+'%');}panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
   const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
 
-function randomize(){if(cycleOn){cycleOn=false;$('cycleBtn').classList.remove('on');}const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
+function randomize(){{const b=$('randBtn');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');}if(cycleOn){cycleOn=false;$('cycleBtn').classList.remove('on');}const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
   Object.assign(v,{flare:R()<.4?0:rr(.3,1.4),frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,.6),ftrace:rr(0,1.5)});
   v.seed=R()*100;morphTo(v);}
@@ -298,6 +311,7 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==
   if(k==='h')document.body.classList.toggle('hideui');if(k==='r')randomize();if(k==='s')saveSnap();if(/^[1-9]$/.test(k))recall(+k-1);if(k===' '){e.preventDefault();$('pauseBtn').click();}});
 addEventListener('resize',resize);
 $('flareBtn').onclick=()=>{flaresOn=!flaresOn;$('flareBtn').classList.toggle('on',flaresOn);$('flareBtn').setAttribute('aria-pressed',String(flaresOn));};
+$('randBtn').addEventListener('animationend',e=>{if(e.animationName==='rflash')$('randBtn').classList.remove('flash');});
 $('saveSnap').onclick=saveSnap;$('cycleBtn').onclick=()=>{cycleOn=!cycleOn;cycleT=0;$('cycleBtn').classList.toggle('on',cycleOn);};
 loadSnaps();drawSnaps();
 if(innerWidth<=640){panel.classList.add('closed');$('panelBtn').setAttribute('aria-expanded','false');}
