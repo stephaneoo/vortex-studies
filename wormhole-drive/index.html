@@ -82,6 +82,7 @@ select{font:inherit;color:var(--fg);background:#16130f;border:1px solid var(--li
 .row button,.row .filebtn{flex:1 1 auto;justify-content:center}
 .presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .presets button{justify-content:center;padding:0 6px}
+.ameter{display:grid;grid-template-columns:40px 1fr;gap:4px 8px;align-items:center;font-size:10px;color:var(--dim)}.ameter i{font-style:normal}.ameter b{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}.ameter span{display:block;height:100%;width:0;background:var(--amber)}
 .snaps{display:flex;flex-wrap:wrap;gap:6px}
 .snap{display:inline-flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
 .snap button{border:none;border-radius:0;height:28px;padding:0 10px}
@@ -134,7 +135,7 @@ const GROUPS=[
  ['Color',[['pal','Palette',['Machine','Ember','Aurora','Threads','Mono']],['hue','Hue',0,360,1,0],['sat','Saturation',0,2,.01,1],['expo','Exposure',.3,3,.01,1.2],['chroma','Fringe',0,1,.01,.25],['inv','Invert',0,1,1,0]]],
  ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,0],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,.6,.005,.25],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
  ['Echo',[['echo','Trails',0,.97,.01,0],['ez','Trail pull',-.05,.05,.001,.012]]],
- ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,2,.01,1]]],
+ ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,3,.01,1.2]]],
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
 ];
 const P={},DEF={},CTL={};
@@ -155,7 +156,7 @@ const panel=$('panel');
         CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=disp(id,P[id],st);},raw:v=>{v=Math.max(mn,Math.min(mx,v));P[id]=v;el.value=v;out.textContent=disp(id,v,st);}};}}
     if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
-    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
+    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div id="ameter" class="ameter" aria-hidden="true"><i>bass</i><b><span></span></b><i>mids</i><b><span></span></b><i>highs</i><b><span></span></b></div><div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
   const sg=$('saveSnap').closest('.grp');{const m=$('k_mtime');m.closest('.ctl').classList.add('big');m.style.setProperty('--p',(P.mtime*100)+'%');}panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
   const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
@@ -202,7 +203,7 @@ float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
 float fbm(vec3 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*noise(p);p=p*2.03+1.7;a*=.5;}return s;}
 vec2 path(float z){float b=bends;return vec2(sin(z*.11*b)*2.+sin(z*.27*b+seed),cos(z*.09*b)*1.6+sin(z*.23*b+seed*2.)*.8)*curve;}
 vec2 path2(float z){float k=.5+.5*sin(z*.035+seed*3.);return path(z)+vec2(sin(z*.21+seed),cos(z*.17+seed))*radius*2.2*k*branch;}
-float wallR(vec2 q,float z){float a=atan(q.y,q.x);return radius*(1.+(ripple+mid*.8)*(.18*sin(a*5.+z*.8+clock*2.)*sin(z*.3+clock)+.09*sin(a*11.-z*1.7+clock*3.))+beat*.06);}
+float wallR(vec2 q,float z){float a=atan(q.y,q.x);return radius*(1.+(ripple+mid*.8)*(.18*sin(a*5.+z*.8+clock*2.)*sin(z*.3+clock)+.09*sin(a*11.-z*1.7+clock*3.))+beat*.1);}
 float tube(vec3 p){vec2 q=p.xy-path(p.z);float d=wallR(q,p.z)-length(q);
  if(branch>.01){vec2 q2=p.xy-path2(p.z);d=max(d,wallR(q2,p.z+7.)-length(q2));}return d;}
 vec3 starfield(vec3 d){vec3 col=vec3(0.);
@@ -303,12 +304,17 @@ function resize(){const d=(window.devicePixelRatio||1)*P.quality;cv.width=Math.m
 let actx=null,an=null,asrc=null,fbins=null,bass=0,mids=0,highs=0;
 $('audioIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('audioNote').textContent='Loading '+f.name+'…';
   try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();await actx.resume();const buf=await actx.decodeAudioData(await f.arrayBuffer());
-    if(asrc){try{asrc.stop();}catch(_){}}an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.75;fbins=new Uint8Array(an.frequencyBinCount);
+    if(asrc){try{asrc.stop();}catch(_){}}an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.6;fbins=new Uint8Array(an.frequencyBinCount);
     asrc=actx.createBufferSource();asrc.buffer=buf;asrc.loop=true;asrc.connect(an);an.connect(actx.destination);asrc.start();$('audioNote').textContent='Playing '+f.name+'.';}
   catch(err){$('audioNote').textContent='That file could not be played. Try an MP3, WAV or M4A.';}};
 $('stopAudio').onclick=()=>{if(asrc){try{asrc.stop();}catch(_){}asrc=null;an=null;$('audioNote').textContent='Track stopped.';}};
 function readAudio(){if(!an){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
-  bass=Math.max(avg(1,8),bass*.85);mids=Math.max(avg(8,48),mids*.88);highs=Math.max(avg(48,160),highs*.85);}
+  const L=[avg(1,8),avg(8,48),avg(48,160)];
+  const tn=performance.now(),adt=Math.min(.25,(tn-(AB.t||tn))/1000);AB.t=tn;
+  for(let i=0;i<3;i++){const b=AB[i];b.slow+=(L[i]-b.slow)*(1-Math.exp(-adt/.5));const d=Math.max(0,L[i]-b.slow*1.02);b.pk=Math.max(d,b.pk*Math.exp(-adt/2.5),.015);b.v=Math.max(Math.min(1.4,d/(b.pk*.6)),b.v*Math.exp(-adt/(i===0?.1:.14)));}
+  bass=AB[0].v;mids=AB[1].v;highs=AB[2].v;
+  meterT2=(meterT2||0)+1;if(meterT2%3===0){const m=$('ameter');if(m)m.querySelectorAll('span').forEach((e,i)=>e.style.width=Math.min(100,[bass,mids,highs][i]*80)+'%');}}
+const AB=[0,1,2].map(()=>({slow:0,pk:.05,v:0}));let meterT2=0;
 
 let flaresOn=true,camRoll=0,vpX=.5,vpY=.5,paused=false,beatOn=true,auto=false,exitsOn=false,apprT=0,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
 let sh=[0,0],shT=[0,0],shTimer=0,autoS=0,spaceTimer=0,spacePhase=0;
@@ -364,11 +370,11 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   const pal=palNow,W=cv.width,H=cv.height;
   useProg(progS);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[0].f);
   gl.uniform2f(US.res,W,H);gl.uniform2f(US.look,lookX,lookY);gl.uniform2f(US.shake,sh[0],sh[1]);
-  gl.uniform1f(US.travel,travel);gl.uniform1f(US.clock,clock);gl.uniform1f(US.roll,rollU);gl.uniform1f(US.fov,P.fov*(1+beat*.08+bass*react*.1+(R()-.5)*P.turb*P.turb*.012));
+  gl.uniform1f(US.travel,travel);gl.uniform1f(US.clock,clock);gl.uniform1f(US.roll,rollU);gl.uniform1f(US.fov,P.fov*(1+beat*.08+bass*react*.16+(R()-.5)*P.turb*P.turb*.012));
   gl.uniform1f(US.curve,cu);gl.uniform1f(US.bends,bends);gl.uniform1f(US.radius,radius*(1+ss*9));gl.uniform1f(US.ripple,P.ripple);gl.uniform1f(US.branch,P.branch*(1-ss));
   gl.uniform1f(US.opac,P.opac*(1-ss));gl.uniform1f(US.refr,P.refr);gl.uniform1f(US.flow,P.flow);gl.uniform1f(US.fil,P.fil);gl.uniform1f(US.sharp,P.sharp);gl.uniform1f(US.glow,P.glow*(1-ss*.8));
   gl.uniform1f(US.space,ss);gl.uniform1f(US.dest,P.dest);gl.uniform1f(US.mass,P.mass);gl.uniform1f(US.disk,P.disk*(1+beat*.5+highs*react*.5));gl.uniform1f(US.tilt,P.tilt);gl.uniform1f(US.dopp,P.dopp);gl.uniform1f(US.dspin,P.dspin);gl.uniform1f(US.stars,P.stars);gl.uniform1f(US.hue,hue);gl.uniform1f(US.sat,P.sat);gl.uniform1f(US.expo,P.expo);gl.uniform1f(US.inv,P.inv);
-  gl.uniform1f(US.beat,beat+bass*react*.5);gl.uniform1f(US.hi,highs*react);gl.uniform1f(US.mid,mids*react);gl.uniform1f(US.bank,P.bank);gl.uniform1f(US.seed,seed);gl.uniform1f(US.appr,appr);
+  gl.uniform1f(US.beat,beat+bass*react*.7);gl.uniform1f(US.hi,highs*react);gl.uniform1f(US.mid,mids*react);gl.uniform1f(US.bank,P.bank);gl.uniform1f(US.seed,seed);gl.uniform1f(US.appr,appr);
   gl.uniform3fv(US.c1,pal[0]);gl.uniform3fv(US.c2,pal[1]);gl.uniform3fv(US.c3,pal[2]);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
