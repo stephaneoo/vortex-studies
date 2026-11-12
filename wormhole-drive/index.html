@@ -83,6 +83,7 @@ select{font:inherit;color:var(--fg);background:#16130f;border:1px solid var(--li
 .presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .presets button{justify-content:center;padding:0 6px}
 .ameter{display:grid;grid-template-columns:40px 1fr;gap:4px 8px;align-items:center;font-size:10px;color:var(--dim)}.ameter i{font-style:normal}.ameter b{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}.ameter span{display:block;height:100%;width:0;background:var(--amber)}
+.wavebox{display:flex;flex-direction:column;gap:3px}.wavebox #wave{position:static;display:block;inset:auto;z-index:auto;width:100%;height:44px;cursor:pointer;border:1px solid var(--line);border-radius:2px;touch-action:none}.wavebox span{font-size:10px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right}
 .snaps{display:flex;flex-wrap:wrap;gap:6px}
 .snap{display:inline-flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
 .snap button{border:none;border-radius:0;height:28px;padding:0 10px}
@@ -156,7 +157,7 @@ const panel=$('panel');
         CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=disp(id,P[id],st);},raw:v=>{v=Math.max(mn,Math.min(mx,v));P[id]=v;el.value=v;out.textContent=disp(id,v,st);}};}}
     if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
-    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div id="ameter" class="ameter" aria-hidden="true"><i>bass</i><b><span></span></b><i>mids</i><b><span></span></b><i>highs</i><b><span></span></b></div><div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio">Stop track</button></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
+    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div id="ameter" class="ameter" aria-hidden="true"><i>bass</i><b><span></span></b><i>mids</i><b><span></span></b><i>highs</i><b><span></span></b></div><div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio" disabled><svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg> Pause track</button></div><div id="wavebox" class="wavebox" hidden><canvas id="wave" aria-label="Track waveform: click or drag to jump"></canvas><span id="wtime">0:00 / 0:00</span></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
   const sg=$('saveSnap').closest('.grp');{const m=$('k_mtime');m.closest('.ctl').classList.add('big');m.style.setProperty('--p',(P.mtime*100)+'%');}panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
   const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
@@ -302,13 +303,31 @@ function resize(){const d=(window.devicePixelRatio||1)*P.quality;cv.width=Math.m
   if(!gl)return;gl.viewport(0,0,cv.width,cv.height);tgt.forEach(o=>{gl.deleteTexture(o.t);gl.deleteFramebuffer(o.f);});tgt=[mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height)];}
 
 let actx=null,an=null,asrc=null,fbins=null,bass=0,mids=0,highs=0;
+let abuf=null,startAt=0,stopPos=0,wfImg=null,wfT=0,wfDrag=false;
+function playFrom(off){if(!abuf)return;if(asrc){try{asrc.onended=null;asrc.stop();}catch(_){}}
+  if(!an){an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.6;fbins=new Uint8Array(an.frequencyBinCount);an.connect(actx.destination);}
+  off=((off%abuf.duration)+abuf.duration)%abuf.duration;asrc=actx.createBufferSource();asrc.buffer=abuf;asrc.loop=true;asrc.connect(an);asrc.start(0,off);startAt=actx.currentTime-off;}
+function trackPos(){if(!abuf)return 0;if(!asrc)return stopPos;return((actx.currentTime-startAt)%abuf.duration+abuf.duration)%abuf.duration;}
+const mmss=t=>Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
+function buildWave(){const c=$('wave'),dpr=Math.min(2,devicePixelRatio||1),W=c.getBoundingClientRect().width||260,H=44;c.width=W*dpr;c.height=H*dpr;
+  const o=document.createElement('canvas');o.width=c.width;o.height=c.height;const g=o.getContext('2d');const d=abuf.getChannelData(0),n=o.width,per=Math.floor(d.length/n),st=Math.max(1,Math.floor(per/64));
+  g.fillStyle='rgba(143,196,255,.55)';for(let x=0;x<n;x++){let mx=0;for(let k=x*per,e=k+per;k<e;k+=st){const v=Math.abs(d[k]);if(v>mx)mx=v;}const h=Math.max(1,mx*o.height*.95);g.fillRect(x,(o.height-h)/2,1,h);}
+  wfImg=o;drawWave();}
+function drawWave(){const c=$('wave');if(!wfImg||!c)return;const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.drawImage(wfImg,0,0);
+  const p=trackPos()/abuf.duration,x=p*c.width;g.fillStyle='rgba(13,11,9,.45)';g.fillRect(x,0,c.width-x,c.height);g.fillStyle='#ffffff';g.fillRect(Math.max(0,x-1),0,2,c.height);
+  $('wtime').textContent=mmss(trackPos())+' / '+mmss(abuf.duration);}
+function seekEv(e){if(!abuf)return;const c=$('wave'),r=c.getBoundingClientRect(),p=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));const t=p*abuf.duration;if(asrc)playFrom(t);else stopPos=t;drawWave();}
+$('wave').addEventListener('pointerdown',e=>{wfDrag=true;$('wave').setPointerCapture(e.pointerId);seekEv(e);});
+$('wave').addEventListener('pointermove',e=>{if(wfDrag)seekEv(e);});
+$('wave').addEventListener('pointerup',()=>{wfDrag=false;});
 $('audioIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('audioNote').textContent='Loading '+f.name+'…';
-  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();await actx.resume();const buf=await actx.decodeAudioData(await f.arrayBuffer());
-    if(asrc){try{asrc.stop();}catch(_){}}an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.6;fbins=new Uint8Array(an.frequencyBinCount);
-    asrc=actx.createBufferSource();asrc.buffer=buf;asrc.loop=true;asrc.connect(an);an.connect(actx.destination);asrc.start();$('audioNote').textContent='Playing '+f.name+'.';}
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();await actx.resume();abuf=await actx.decodeAudioData(await f.arrayBuffer());
+    $('wavebox').hidden=false;playFrom(0);buildWave();$('audioNote').textContent='Playing '+f.name+'. Click or drag the waveform to jump.';setTrackBtn(true);$('stopAudio').disabled=false;}
   catch(err){$('audioNote').textContent='That file could not be played. Try an MP3, WAV or M4A.';}};
-$('stopAudio').onclick=()=>{if(asrc){try{asrc.stop();}catch(_){}asrc=null;an=null;$('audioNote').textContent='Track stopped.';}};
-function readAudio(){if(!an){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
+$('stopAudio').onclick=()=>{if(!abuf)return;if(asrc){stopPos=trackPos();try{asrc.stop();}catch(_){}asrc=null;$('audioNote').textContent='Track paused.';setTrackBtn(false);}else{actx.resume();playFrom(stopPos);$('audioNote').textContent='Playing.';setTrackBtn(true);}drawWave();};
+function setTrackBtn(on){$('stopAudio').innerHTML=on?'<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg> Pause track':'<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg> Play track';}
+addEventListener('resize',()=>{if(abuf)buildWave();});
+function readAudio(){if(abuf){wfT++;if(wfT%6===0)drawWave();}if(!an||!asrc){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
   const L=[avg(1,8),avg(8,48),avg(48,160)];
   const tn=performance.now(),adt=Math.min(.25,(tn-(AB.t||tn))/1000);AB.t=tn;
   for(let i=0;i<3;i++){const b=AB[i];b.slow+=(L[i]-b.slow)*(1-Math.exp(-adt/.5));const d=Math.max(0,L[i]-b.slow*1.02);b.pk=Math.max(d,b.pk*Math.exp(-adt/2.5),.015);b.v=Math.max(Math.min(1.4,d/(b.pk*.6)),b.v*Math.exp(-adt/(i===0?.1:.14)));}
