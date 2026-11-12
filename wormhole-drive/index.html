@@ -168,7 +168,7 @@ const NOSNAP=['wob','turb','fbeat','quality','bpm','react','pulse','mtime','cyc'
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
 function current(){const o={seed};for(const k in P)if(!NOSNAP.includes(k))o[k]=P[k];return o;}
 let wave=null;
-function kickWobble(){if(!paused||P.wob<=0)return;wave={z:48,a:P.wob};}
+function kickWobble(){if(!paused||P.wob<=0)return;wave={z:34,a:P.wob,t:0};}
 function morphTo(t){const dur=MT(P.mtime);palFrom=palNow?palNow.map(c=>c.slice()):null;
   for(const k of SELS)if(k in t)CTL[k].set(t[k]);
   if(dur<=0){for(const k in t){if(k==='seed')seed=t.seed;else if(CTL[k]&&!SELS.includes(k))CTL[k].set(t[k]);}morph=null;palFrom=null;kickWobble();return;}
@@ -177,7 +177,7 @@ const SLOWK={seed:2500,curve:1200,bends:1200,radius:900,branch:900};let blurBump
 function ease(k){k=Math.min(1,Math.max(0,k));const q=1-(1-k)*(1-k)*(1-k);return q*q*q*(q*(q*6-15)+10);}
 function morphStep(now){blurBump=0;if(!morph)return 1;const el=Math.max(0,now-morph.t0);let k=Math.min(1,el/morph.dur);const e=ease(k);
   if(morph.dur<4000){const kk=Math.min(1,el/Math.max(morph.dur,600));blurBump=Math.sin(Math.PI*kk)*(1-morph.dur/4000);}
-  let done=k>=1;if(!morph.kicked&&e>=.82){morph.kicked=true;kickWobble();}
+  let done=k>=1;if(!morph.kicked&&e>=.3){morph.kicked=true;kickWobble();}
   for(const key in morph.to){if(SELS.includes(key))continue;const dk=Math.max(morph.dur,SLOWK[key]||0),ek=ease(el/dk);if(el<dk)done=false;const a=morph.from[key];let b=morph.to[key];if(key==='seed'){const T=6.2832;b=a+((((b-a)%T)+T*1.5)%T-T*.5);}if(a===undefined)continue;const v=a+(b-a)*ek;
     if(key==='seed')seed=v;else if(CTL[key])CTL[key].raw(v);}
   if(morph.dur<4000&&el<600)done=false;
@@ -351,7 +351,8 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   const A=clock;
   const curve=P.curve*(auto?1+.5*Math.sin(A*.07):1),radius=P.radius*(auto?1+.35*Math.sin(A*.05+1):1),hue=P.hue+(auto?A*5:0),bends=P.bends*(auto?1+.3*Math.sin(A*.03+2):1);
   const sp=Math.max(P.space,autoS),ss=sp*sp*(3-2*sp);
-  if(wave){wave.z-=dt*30;if(wave.z<-8)wave=null;}const wz=wave?wave.z:999,wA=wave?wave.a:0,wc=wave?wA*Math.exp(-wz*wz/3)*.9:0;
+  if(wave){wave.z-=dt*28;wave.t+=dt;if(wave.z<-22)wave=null;}const sm=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
+  const wz=wave?wave.z:999,wA=wave?wave.a*sm(0,.25,wave.t)*sm(-22,0,wave.z):0,wc=wave?wA*Math.exp(-wz*wz/3)*.9:0;
   const cu=curve*(1-ss*.6),pth=z=>[(Math.sin(z*.11*bends)*2+Math.sin(z*.27*bends+seed))*cu,(Math.cos(z*.09*bends)*1.6+Math.sin(z*.23*bends+seed*2)*.8)*cu];
   const p0=pth(travel),p3=pth(travel+3),p4=pth(travel+4),p6=pth(travel+6),pf=pth(travel+22);
   const rollU=rollAcc+(R()-.5)*(P.turb*.02+P.turb*P.turb*.02);camRoll=-(p6[0]-2*p3[0]+p0[0])*P.bank*.6+rollU;
