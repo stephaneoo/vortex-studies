@@ -136,7 +136,7 @@ function fmt(v,step){return step>=1?String(Math.round(v)):(+v).toFixed(step<.01?
 const panel=$('panel');
 (function build(){
   const sn=document.createElement('div');sn.className='grp';sn.innerHTML='<h2>Snapshots</h2><div class="row"><button id="saveSnap"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 5.5h2.2L5.5 3.5h5l1.3 2H14v7.5H2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Save snapshot</button><button id="cycleBtn"><span class="lamp"></span>Cycle</button></div><div class="snaps" id="snaps"></div><div id="morphCtl"></div><p class="note" id="snapNote">Found a look you like? Save it. Click a snapshot to morph into it. Keys: S saves, 1–9 recall.</p>';panel.appendChild(sn);
-  GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.001,.464],['cyc','Cycle every',0,1,.001,.231]]]);
+  GROUPS.unshift(['Turbulence',[['turb','Turbulence',0,5,.01,0]]]);GROUPS.splice(1,0,['Morph',[['mtime','Morph time',0,1,.001,.464],['cyc','Cycle every',0,1,.001,.231],['wob','Landing wobble',0,2,.01,1]]]);
   for(const[g,list]of GROUPS){const d=document.createElement('div');d.className='grp';d.innerHTML='<h2>'+g+'</h2>';
     for(const c of list){const[id,lab]=c;const row=document.createElement('div');row.className='ctl';
       if(Array.isArray(c[2])){row.innerHTML='<label for="k_'+id+'">'+lab+'</label><select id="k_'+id+'">'+c[2].map((o,i)=>'<option value="'+i+'">'+o+'</option>').join('')+'</select><span></span>';
@@ -156,12 +156,15 @@ function randomize(){{const b=$('randBtn');b.classList.remove('flash');void b.of
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
   Object.assign(v,{flare:R()<.3?0:.4+Math.pow(R(),.8)*2.2,frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,.6),glare:R()<.45?0:rr(.2,3),ftrace:rr(0,1.5)});
   v.seed=R()*100;morphTo(v);}
-const NOSNAP=['turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
+const NOSNAP=['wob','turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
 function current(){const o={seed};for(const k in P)if(!NOSNAP.includes(k))o[k]=P[k];return o;}
+const WB={a:[0,0,70,2.2],b:[0,0,42,1.8],c:[0,0,120,3]};
+function kickWobble(){if(!paused||P.wob<=0)return;const s=P.wob;for(const k in WB){WB[k][1]+=(R()<.5?-1:1)*(4+R()*4)*s;}}
+function stepWobble(dt){const n=4,h=dt/n;for(const k in WB){const w=WB[k];for(let i=0;i<n;i++){w[1]+=(-w[2]*w[0]-w[3]*w[1])*h;w[0]+=w[1]*h;}if(Math.abs(w[0])<1e-4&&Math.abs(w[1])<1e-3){w[0]=0;w[1]=0;}}}
 function morphTo(t){const dur=MT(P.mtime);palFrom=palNow?palNow.map(c=>c.slice()):null;
   for(const k of SELS)if(k in t)CTL[k].set(t[k]);
-  if(dur<=0){for(const k in t){if(k==='seed')seed=t.seed;else if(CTL[k]&&!SELS.includes(k))CTL[k].set(t[k]);}morph=null;palFrom=null;return;}
+  if(dur<=0){for(const k in t){if(k==='seed')seed=t.seed;else if(CTL[k]&&!SELS.includes(k))CTL[k].set(t[k]);}morph=null;palFrom=null;kickWobble();return;}
   morph={from:current(),to:t,t0:performance.now(),dur:dur*1000};}
 const SLOWK={seed:2500,curve:1200,bends:1200,radius:900,branch:900};let blurBump=0;
 function ease(k){k=Math.min(1,Math.max(0,k));const q=1-(1-k)*(1-k)*(1-k);return q*q*q*(q*(q*6-15)+10);}
@@ -171,7 +174,7 @@ function morphStep(now){blurBump=0;if(!morph)return 1;const el=Math.max(0,now-mo
   for(const key in morph.to){if(SELS.includes(key))continue;const dk=Math.max(morph.dur,SLOWK[key]||0),ek=ease(el/dk);if(el<dk)done=false;const a=morph.from[key];let b=morph.to[key];if(key==='seed'){const T=6.2832;b=a+((((b-a)%T)+T*1.5)%T-T*.5);}if(a===undefined)continue;const v=a+(b-a)*ek;
     if(key==='seed')seed=v;else if(CTL[key])CTL[key].raw(v);}
   if(morph.dur<4000&&el<600)done=false;
-  if(done){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].set(morph.to[key]);morph=null;}return e;}
+  if(done){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].set(morph.to[key]);morph=null;kickWobble();}return e;}
 function loadSnaps(){try{snaps=JSON.parse(localStorage.getItem('wormhole-snaps')||'[]')||[];}catch(_){snaps=[];}}
 function storeSnaps(){try{localStorage.setItem('wormhole-snaps',JSON.stringify(snaps));}catch(_){}}
 function drawSnaps(){const box=$('snaps');box.innerHTML='';snaps.forEach((s,i)=>{const d=document.createElement('div');d.className='snap'+(i===snapOn?' on':'');
@@ -253,10 +256,11 @@ void main(){
  col*=expo*(1.+beat*.4);col=1.-exp(-col*1.4);
  col=mix(col,1.-col,inv);
  gl_FragColor=vec4(col,1.);}`;
-const POST=`precision highp float;uniform sampler2D cur,prev;uniform vec2 res,c;uniform float glare,echo,ez,chroma,flare,fstreak,ghosts,frush,ftrace,froll,fspd;uniform vec2 vp;
+const POST=`precision highp float;uniform sampler2D cur,prev;uniform vec2 res,c;uniform float wobw,wobt,glare,echo,ez,chroma,flare,fstreak,ghosts,frush,ftrace,froll,fspd;uniform vec2 vp;
 vec3 br(vec2 p){if(p.x<0.||p.y<0.||p.x>1.||p.y>1.)return vec3(0.);vec3 c=texture2D(cur,p).rgb;float l=max(c.r,max(c.g,c.b));return c*smoothstep(.86,1.,l)*smoothstep(.86,1.,l);}
 void main(){vec2 uv=gl_FragCoord.xy/res;vec2 d=uv-c;
- vec3 a=vec3(texture2D(cur,uv+d*chroma*.03).r,texture2D(cur,uv).g,texture2D(cur,uv-d*chroma*.03).b);
+ vec2 wv=uv;if(abs(wobw)>.001){vec2 q=uv-.5;float rr=length(q);wv+=wobw*.035*(q*sin(rr*18.-wobt*9.)+.4*vec2(sin(uv.y*9.+wobt*6.),sin(uv.x*8.-wobt*5.)));}
+ vec3 a=vec3(texture2D(cur,wv+d*chroma*.03).r,texture2D(cur,wv).g,texture2D(cur,wv-d*chroma*.03).b);
  a*=1.-dot(d,d)*.6;
  if(flare>.01){vec3 fl=vec3(0.);vec2 asp=vec2(res.x/res.y,1.);vec2 gv=vp-uv;
   if(frush>.01){vec3 rs=vec3(0.);float L=(.04+.16*fspd)*frush;for(int j=1;j<=12;j++){float t=float(j)/12.;rs+=br(uv+gv*t*L)*(1.-t);}fl+=rs*vec3(.75,.88,1.)*.11;}
@@ -287,7 +291,7 @@ function mkTarget(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t
 function initGL(){progS=compile(SCENE);progP=compile(POST);progB=compile(BLIT);
   quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
   US=uni(progS,['dest','mass','disk','tilt','dopp','dspin','res','look','shake','travel','clock','roll','fov','curve','bends','radius','ripple','branch','opac','refr','flow','fil','sharp','glow','space','stars','hue','sat','expo','inv','beat','hi','mid','bank','seed','appr','c1','c2','c3']);
-  UP=uni(progP,['glare','cur','prev','res','c','echo','ez','chroma','flare','fstreak','ghosts','frush','ftrace','froll','fspd','vp']);UB=uni(progB,['t','res']);}
+  UP=uni(progP,['wobw','wobt','glare','cur','prev','res','c','echo','ez','chroma','flare','fstreak','ghosts','frush','ftrace','froll','fspd','vp']);UB=uni(progB,['t','res']);}
 function resize(){const d=(window.devicePixelRatio||1)*P.quality;cv.width=Math.max(2,innerWidth*d|0);cv.height=Math.max(2,innerHeight*d|0);
   if(!gl)return;gl.viewport(0,0,cv.width,cv.height);tgt.forEach(o=>{gl.deleteTexture(o.t);gl.deleteFramebuffer(o.f);});tgt=[mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height),mkTarget(cv.width,cv.height)];}
 
@@ -339,7 +343,8 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   const A=clock;
   const curve=P.curve*(auto?1+.5*Math.sin(A*.07):1),radius=P.radius*(auto?1+.35*Math.sin(A*.05+1):1),hue=P.hue+(auto?A*5:0),bends=P.bends*(auto?1+.3*Math.sin(A*.03+2):1);
   const sp=Math.max(P.space,autoS),ss=sp*sp*(3-2*sp);
-  const cu=curve*(1-ss*.6),pth=z=>[(Math.sin(z*.11*bends)*2+Math.sin(z*.27*bends+seed))*cu,(Math.cos(z*.09*bends)*1.6+Math.sin(z*.23*bends+seed*2)*.8)*cu];
+  stepWobble(dt);const wa=WB.a[0],wb=WB.b[0],wc=WB.c[0];
+  const cu=(curve+wb*.5)*(1-ss*.6),pth=z=>[(Math.sin(z*.11*bends)*2+Math.sin(z*.27*bends+seed))*cu,(Math.cos(z*.09*bends)*1.6+Math.sin(z*.23*bends+seed*2)*.8)*cu];
   const p0=pth(travel),p3=pth(travel+3),p4=pth(travel+4),p6=pth(travel+6),pf=pth(travel+22);
   const rollU=rollAcc+(R()-.5)*(P.turb*.02+P.turb*P.turb*.02);camRoll=-(p6[0]-2*p3[0]+p0[0])*P.bank*.6+rollU;
   {const ro=[p0[0]+sh[0],p0[1]+sh[1],travel];let fw=[p4[0]-p0[0],p4[1]-p0[1],4];let n=Math.hypot(...fw);fw=fw.map(x=>x/n);
@@ -355,7 +360,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   useProg(progS);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[0].f);
   gl.uniform2f(US.res,W,H);gl.uniform2f(US.look,lookX,lookY);gl.uniform2f(US.shake,sh[0],sh[1]);
   gl.uniform1f(US.travel,travel);gl.uniform1f(US.clock,clock);gl.uniform1f(US.roll,rollU);gl.uniform1f(US.fov,P.fov*(1+beat*.08+bass*react*.1+(R()-.5)*P.turb*P.turb*.012));
-  gl.uniform1f(US.curve,curve*(1-ss*.6));gl.uniform1f(US.bends,bends);gl.uniform1f(US.radius,radius*(1+ss*9));gl.uniform1f(US.ripple,P.ripple);gl.uniform1f(US.branch,P.branch*(1-ss));
+  gl.uniform1f(US.curve,cu);gl.uniform1f(US.bends,bends);gl.uniform1f(US.radius,radius*(1+wa*.16)*(1+ss*9));gl.uniform1f(US.ripple,P.ripple+Math.abs(wc)*.6);gl.uniform1f(US.branch,P.branch*(1-ss));
   gl.uniform1f(US.opac,P.opac*(1-ss));gl.uniform1f(US.refr,P.refr);gl.uniform1f(US.flow,P.flow);gl.uniform1f(US.fil,P.fil);gl.uniform1f(US.sharp,P.sharp);gl.uniform1f(US.glow,P.glow*(1-ss*.8));
   gl.uniform1f(US.space,ss);gl.uniform1f(US.dest,P.dest);gl.uniform1f(US.mass,P.mass);gl.uniform1f(US.disk,P.disk*(1+beat*.5+highs*react*.5));gl.uniform1f(US.tilt,P.tilt);gl.uniform1f(US.dopp,P.dopp);gl.uniform1f(US.dspin,P.dspin);gl.uniform1f(US.stars,P.stars);gl.uniform1f(US.hue,hue);gl.uniform1f(US.sat,P.sat);gl.uniform1f(US.expo,P.expo);gl.uniform1f(US.inv,P.inv);
   gl.uniform1f(US.beat,beat+bass*react*.5);gl.uniform1f(US.hi,highs*react);gl.uniform1f(US.mid,mids*react);gl.uniform1f(US.bank,P.bank);gl.uniform1f(US.seed,seed);gl.uniform1f(US.appr,appr);
@@ -364,7 +369,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[0].t);gl.uniform1i(UP.cur,0);
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tgt[1].t);gl.uniform1i(UP.prev,1);
-  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*P.flare*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.glare,(flaresOn?1:0)*P.glare);gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
+  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*P.flare*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.wobw,wc);gl.uniform1f(UP.wobt,now/1000);gl.uniform1f(UP.glare,(flaresOn?1:0)*P.glare);gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
