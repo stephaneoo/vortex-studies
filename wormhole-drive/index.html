@@ -47,10 +47,11 @@ aside.closed{transform:translateX(105%)}
 .ctl label{color:var(--dim);font-size:11px}
 .ctl output{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
 input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
-#randBtn{border-color:rgba(143,196,255,.55);color:#dcecff;animation:rglow 3.2s ease-in-out infinite}
-@keyframes rglow{0%,100%{box-shadow:0 0 6px rgba(143,196,255,.25)}50%{box-shadow:0 0 18px rgba(143,196,255,.65),inset 0 0 10px rgba(143,196,255,.22)}}
+#randBtn{display:inline-flex;align-items:center;gap:7px;font-weight:600;padding-inline:14px;border-color:#b9dbff;color:#0a1422;background:linear-gradient(180deg,#bfe0ff,#7fb6f5);animation:rglow 3.2s ease-in-out infinite}
+#randBtn:hover{background:linear-gradient(180deg,#d6ebff,#93c4fa)}
+@keyframes rglow{0%,100%{box-shadow:0 0 8px rgba(143,196,255,.4)}50%{box-shadow:0 0 26px rgba(143,196,255,.9),0 0 4px rgba(255,255,255,.6)}}
 #randBtn.flash{animation:rflash .7s ease-out}
-@keyframes rflash{0%{box-shadow:0 0 34px rgba(190,222,255,1),inset 0 0 18px rgba(190,222,255,.7);background:rgba(143,196,255,.35)}100%{box-shadow:0 0 6px rgba(143,196,255,.25)}}
+@keyframes rflash{0%{box-shadow:0 0 44px rgba(220,238,255,1),0 0 10px #fff;background:#ffffff;transform:scale(1.06)}100%{box-shadow:0 0 8px rgba(143,196,255,.4);transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){#randBtn,#randBtn.flash{animation:none;box-shadow:0 0 12px rgba(143,196,255,.45)}}
 .ctl.big{grid-template-columns:minmax(0,1fr) auto;row-gap:4px;padding-block:4px}
 .ctl.big label{font-size:12px;color:var(--fg)}.ctl.big output{font-size:13px;color:var(--amber)}
@@ -92,7 +93,7 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
   <div class="brand"><h1>wormhole drive</h1></div>
   <div class="tools">
     <button id="pauseBtn" aria-label="Pause">Pause</button>
-    <button id="randBtn">Randomize</button>
+    <button id="randBtn"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="5" r="1.3" fill="currentColor"/><circle cx="11" cy="5" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="5" cy="11" r="1.3" fill="currentColor"/><circle cx="11" cy="11" r="1.3" fill="currentColor"/></svg>Randomize</button>
     <button id="flareBtn" class="on" aria-pressed="true"><span class="lamp"></span>Flares</button>
     <button id="fsBtn">Fullscreen</button>
     <button id="hideBtn">Hide UI</button>
