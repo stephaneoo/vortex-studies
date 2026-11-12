@@ -53,6 +53,14 @@ input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
 #randBtn svg{animation:dspin 6s linear infinite}#randBtn.flash svg{animation:droll .7s cubic-bezier(.2,.8,.3,1)}
 @keyframes dspin{to{transform:rotate(360deg)}}@keyframes droll{from{transform:rotate(0)}to{transform:rotate(720deg)}}
 #randBtn.flash{animation:rflash .7s ease-out}
+#pauseBtn{display:inline-flex;align-items:center;gap:7px}
+#pauseBtn.paused{background:#ffb84d;border-color:#ffd08a;color:#1b1203;font-weight:600;animation:ppulse 1.6s ease-in-out infinite}
+@keyframes ppulse{0%,100%{box-shadow:0 0 4px rgba(255,184,77,.35);opacity:1}50%{box-shadow:0 0 18px 3px rgba(255,184,77,.8);opacity:.82}}
+.brand h1::after{content:"";}
+body.is-paused .brand h1::after{content:"  ❚❚ paused";color:#ffb84d;font-size:.8em;animation:ppulse2 1.6s ease-in-out infinite}
+@keyframes ppulse2{50%{opacity:.35}}
+body.is-paused #showBtn{border-color:#ffb84d;color:#ffb84d}
+@media (prefers-reduced-motion:reduce){#pauseBtn.paused,body.is-paused .brand h1::after{animation:none}}
 #saveSnap{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;color:#cfe6ff;border:1.5px solid #8fc4ff;background:rgba(143,196,255,.12);box-shadow:0 0 10px rgba(143,196,255,.25)}
 #saveSnap:hover{background:rgba(143,196,255,.22);box-shadow:0 0 16px rgba(143,196,255,.5)}
 #saveSnap.saved{animation:ssave .6s ease-out}
@@ -100,7 +108,7 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
 <div class="top">
   <div class="brand"><h1>wormhole drive</h1></div>
   <div class="tools">
-    <button id="pauseBtn" aria-label="Pause">Pause</button>
+    <button id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg><span>Pause</span></button>
     <button id="randBtn"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="5" r="1.3" fill="currentColor"/><circle cx="11" cy="5" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="5" cy="11" r="1.3" fill="currentColor"/><circle cx="11" cy="11" r="1.3" fill="currentColor"/></svg>Randomize</button>
     <button id="flareBtn" class="on" aria-pressed="true"><span class="lamp"></span>Flares</button>
     <button id="fsBtn">Fullscreen</button>
@@ -307,7 +315,8 @@ function readAudio(){if(!an){bass*=.9;mids*=.9;highs*=.9;return;}an.getByteFrequ
 
 let flaresOn=true,camRoll=0,vpX=.5,vpY=.5,paused=false,beatOn=true,auto=false,exitsOn=false,apprT=0,travel=0,clock=0,rollAcc=0,seed=R()*100,last=performance.now(),drag=null,lookX=0,lookY=0;
 let sh=[0,0],shT=[0,0],shTimer=0,autoS=0,spaceTimer=0,spacePhase=0;
-$('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Play':'Pause';$('pauseBtn').setAttribute('aria-label',paused?'Play':'Pause');};
+const ICP='<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg>',ICS='<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg>';
+$('pauseBtn').onclick=()=>{paused=!paused;const b=$('pauseBtn');b.innerHTML=(paused?ICP:ICS)+'<span>'+(paused?'Paused':'Pause')+'</span>';b.classList.toggle('paused',paused);b.setAttribute('aria-label',paused?'Play':'Pause');document.body.classList.toggle('is-paused',paused);};
 $('randBtn').onclick=randomize;
 
 $('beatBtn').onclick=()=>{beatOn=!beatOn;$('beatBtn').classList.toggle('on',beatOn);};
