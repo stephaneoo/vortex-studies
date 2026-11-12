@@ -202,7 +202,7 @@ float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
 float fbm(vec3 p){float s=0.,a=.5;for(int i=0;i<4;i++){s+=a*noise(p);p=p*2.03+1.7;a*=.5;}return s;}
 vec2 path(float z){float b=bends;return vec2(sin(z*.11*b)*2.+sin(z*.27*b+seed),cos(z*.09*b)*1.6+sin(z*.23*b+seed*2.)*.8)*curve;}
 vec2 path2(float z){float k=.5+.5*sin(z*.035+seed*3.);return path(z)+vec2(sin(z*.21+seed),cos(z*.17+seed))*radius*2.2*k*branch;}
-float wallR(vec2 q,float z){float a=atan(q.y,q.x);return radius*(1.+(ripple+mid*.8)*(.18*sin(a*5.+z*.8+clock*2.)*sin(z*.3+clock)+.09*sin(a*11.-z*1.7+clock*3.))+beat*.06));}
+float wallR(vec2 q,float z){float a=atan(q.y,q.x);return radius*(1.+(ripple+mid*.8)*(.18*sin(a*5.+z*.8+clock*2.)*sin(z*.3+clock)+.09*sin(a*11.-z*1.7+clock*3.))+beat*.06);}
 float tube(vec3 p){vec2 q=p.xy-path(p.z);float d=wallR(q,p.z)-length(q);
  if(branch>.01){vec2 q2=p.xy-path2(p.z);d=max(d,wallR(q2,p.z+7.)-length(q2));}return d;}
 vec3 starfield(vec3 d){vec3 col=vec3(0.);
