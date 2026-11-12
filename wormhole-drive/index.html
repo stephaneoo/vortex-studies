@@ -178,11 +178,11 @@ const SLOWK={seed:2500,curve:1200,bends:1200,radius:900,branch:900};let blurBump
 function ease(k){k=Math.min(1,Math.max(0,k));const q=1-(1-k)*(1-k)*(1-k);return q*q*q*(q*(q*6-15)+10);}
 function morphStep(now){blurBump=0;if(!morph)return 1;const el=Math.max(0,now-morph.t0);let k=Math.min(1,el/morph.dur);const e=ease(k);
   if(morph.dur<4000){const kk=Math.min(1,el/Math.max(morph.dur,600));blurBump=Math.sin(Math.PI*kk)*(1-morph.dur/4000);}
-  let done=k>=1;
+  let done=k>=1;if(!morph.kicked&&e>=.82){morph.kicked=true;kickWobble();}
   for(const key in morph.to){if(SELS.includes(key))continue;const dk=Math.max(morph.dur,SLOWK[key]||0),ek=ease(el/dk);if(el<dk)done=false;const a=morph.from[key];let b=morph.to[key];if(key==='seed'){const T=6.2832;b=a+((((b-a)%T)+T*1.5)%T-T*.5);}if(a===undefined)continue;const v=a+(b-a)*ek;
     if(key==='seed')seed=v;else if(CTL[key])CTL[key].raw(v);}
   if(morph.dur<4000&&el<600)done=false;
-  if(done){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].set(morph.to[key]);morph=null;kickWobble();}return e;}
+  if(done){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].set(morph.to[key]);morph=null;}return e;}
 function loadSnaps(){try{snaps=JSON.parse(localStorage.getItem('wormhole-snaps')||'[]')||[];}catch(_){snaps=[];}}
 function storeSnaps(){try{localStorage.setItem('wormhole-snaps',JSON.stringify(snaps));}catch(_){}}
 function drawSnaps(){const box=$('snaps');box.innerHTML='';snaps.forEach((s,i)=>{const d=document.createElement('div');d.className='snap'+(i===snapOn?' on':'');
