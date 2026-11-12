@@ -49,10 +49,12 @@ aside.closed{transform:translateX(105%)}
 input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
 #randBtn{display:inline-flex;align-items:center;gap:7px;font-weight:600;padding-inline:14px;border-color:#b9dbff;color:#0a1422;background:linear-gradient(180deg,#bfe0ff,#7fb6f5);animation:rglow 3.2s ease-in-out infinite}
 #randBtn:hover{background:linear-gradient(180deg,#d6ebff,#93c4fa)}
-@keyframes rglow{0%,100%{box-shadow:0 0 8px rgba(143,196,255,.4)}50%{box-shadow:0 0 26px rgba(143,196,255,.9),0 0 4px rgba(255,255,255,.6)}}
+@keyframes rglow{0%,100%{box-shadow:0 0 10px rgba(143,196,255,.5),0 0 2px rgba(255,255,255,.4)}50%{box-shadow:0 0 22px 4px rgba(143,196,255,.95),0 0 46px 10px rgba(143,196,255,.45),0 0 6px rgba(255,255,255,.8)}}
+#randBtn svg{animation:dspin 6s linear infinite}#randBtn.flash svg{animation:droll .7s cubic-bezier(.2,.8,.3,1)}
+@keyframes dspin{to{transform:rotate(360deg)}}@keyframes droll{from{transform:rotate(0)}to{transform:rotate(720deg)}}
 #randBtn.flash{animation:rflash .7s ease-out}
 @keyframes rflash{0%{box-shadow:0 0 44px rgba(220,238,255,1),0 0 10px #fff;background:#ffffff;transform:scale(1.06)}100%{box-shadow:0 0 8px rgba(143,196,255,.4);transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){#randBtn,#randBtn.flash{animation:none;box-shadow:0 0 12px rgba(143,196,255,.45)}}
+@media (prefers-reduced-motion:reduce){#randBtn svg,#randBtn.flash svg{animation:none}#randBtn,#randBtn.flash{animation:none;box-shadow:0 0 12px rgba(143,196,255,.45)}}
 .ctl.big{grid-template-columns:minmax(0,1fr) auto;row-gap:4px;padding-block:4px}
 .ctl.big label{font-size:12px;color:var(--fg)}.ctl.big output{font-size:13px;color:var(--amber)}
 .ctl.big input{grid-column:1/-1;grid-row:2;-webkit-appearance:none;appearance:none;height:24px;background:transparent;cursor:pointer}
