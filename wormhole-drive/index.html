@@ -354,6 +354,13 @@ async function listenTab(){if(liveStream){stopLive();$('audioNote').textContent=
     $('tabBtn').textContent='Stop listening';$('tabBtn').classList.add('on');$('audioNote').textContent='Listening to the shared tab. Its sound keeps playing there; the tunnel reacts here.';}
   catch(_){$('audioNote').textContent='Tab listening was cancelled or isn\'t supported in this browser (it works in Chrome and Edge).';}}
 $('radioBtn').onclick=playRadio;$('tabBtn').onclick=listenTab;
+(function autoRadio(){let armed=true;const go=e=>{if(!armed)return;const t=e.target;if(t.closest&&t.closest('#radioBtn,#tabBtn,.filebtn,#stopAudio,#wave,#radioUrl'))return;armed=false;off();if(!liveEl&&!liveStream&&!asrc)playRadio();};
+  const off=()=>['pointerdown','keydown','touchstart'].forEach(ev=>removeEventListener(ev,go,true));
+  try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(_){}
+  if(actx&&actx.state==='running'){armed=false;playRadio();return;}
+  ['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,go,true));
+  $('audioNote').textContent='Ambient Sleeping Pill starts with your first click or key press (browsers don\'t allow sound before that).';
+  const ob=setInterval(()=>{if(liveEl||liveStream||asrc){armed=false;off();clearInterval(ob);}},500);})();
 let abuf=null,startAt=0,stopPos=0,wfImg=null,wfT=0,wfDrag=false;
 function playFrom(off){if(!abuf)return;if(asrc){try{asrc.onended=null;asrc.stop();}catch(_){}}
   if(!an){an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.6;fbins=new Uint8Array(an.frequencyBinCount);an.connect(actx.destination);}
