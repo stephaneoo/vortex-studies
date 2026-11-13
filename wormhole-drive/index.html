@@ -390,14 +390,22 @@ function startRec(){if(rec)return;if(!window.MediaRecorder||!cv.captureStream){$
   const types=['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1.4D401F,mp4a.40.2','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];const mt=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
   let mr;try{mr=new MediaRecorder(st,{mimeType:mt||undefined,videoBitsPerSecond:12e6});}catch(_){mr=new MediaRecorder(st);}
   const chunks=[];mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
-  mr.onstop=()=>{srcs.forEach(n=>{try{n.disconnect(recDest);}catch(_){}});const type=mr.mimeType||mt||'video/webm',ext=/mp4/.test(type)?'mp4':'webm';const blob=new Blob(chunks,{type});
-    const d=new Date(),p=n=>String(n).padStart(2,'0');recFile=new File([blob],'wormhole-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'.'+ext,{type});
-    const secs=((performance.now()-rec.t0)/1000).toFixed(1);rec=null;const b=$('recBtn');b.classList.remove('on');b.querySelector('.rt').textContent='Rec';b.setAttribute('aria-label','Start recording');
-    const canShare=!!(navigator.canShare&&navigator.canShare({files:[recFile]}));$('recSave').hidden=!canShare;$('recDl').hidden=false;
-    $('recMsg').textContent='Clip ready · '+secs+' s'+(ext==='webm'?' · WebM':'')+(P.rsound===0&&!srcs.length?' · no sound':'');$('recToast').hidden=false;
-    if(!canShare||!matchMedia('(pointer:coarse)').matches)dlRec();};
-  mr.start(500);rec={mr,t0:performance.now(),max:[0,5,10,30][P.rlen]};const b=$('recBtn');b.classList.add('on');b.setAttribute('aria-label','Stop recording');b.querySelector('.rt').textContent='0:00';$('recToast').hidden=true;}
-function stopRec(){if(rec&&rec.mr.state!=='inactive')rec.mr.stop();}
+  let done=false;const finish=()=>{if(done)return;done=true;const r0=rec;rec=null;
+    const b=$('recBtn');b.classList.remove('on');b.querySelector('.rt').textContent='Rec';b.setAttribute('aria-label','Start recording');
+    srcs.forEach(n=>{try{n.disconnect(recDest);}catch(_){}});
+    try{if(!chunks.length){$('recMsg').textContent='This browser didn\'t produce a clip. Try recording in Safari or Chrome.';$('recSave').hidden=true;$('recDl').hidden=true;$('recToast').hidden=false;return;}
+      const type=mr.mimeType||mt||chunks[0].type||'video/mp4',ext=/webm/.test(type)?'webm':'mp4';const blob=new Blob(chunks,{type});
+      const d=new Date(),p=n=>String(n).padStart(2,'0');const name='wormhole-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'.'+ext;
+      try{recFile=new File([blob],name,{type});}catch(_){recFile=blob;recFile.name=name;}
+      const secs=((performance.now()-r0.t0)/1000).toFixed(1);let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[recFile]}));}catch(_){}
+      $('recSave').hidden=!canShare;$('recDl').hidden=false;$('recMsg').textContent='Clip ready · '+secs+' s'+(ext==='webm'?' · WebM':'')+(P.rsound===0&&!srcs.length?' · no sound':'');$('recToast').hidden=false;
+      if(!canShare&&!matchMedia('(pointer:coarse)').matches)dlRec();else if(!canShare)dlRec();}
+    catch(err){$('recMsg').textContent='Saving the clip failed ('+(err&&err.message||'unknown')+'). Try Safari.';$('recSave').hidden=true;$('recDl').hidden=true;$('recToast').hidden=false;}};
+  mr.onstop=()=>setTimeout(finish,60);mr.onerror=()=>finish();
+  mr.start(500);rec={mr,finish,t0:performance.now(),max:[0,5,10,30][P.rlen]};const b=$('recBtn');b.classList.add('on');b.setAttribute('aria-label','Stop recording');b.querySelector('.rt').textContent='0:00';$('recToast').hidden=true;}
+function stopRec(){if(!rec||rec.stopping)return;rec.stopping=true;const b=$('recBtn');b.querySelector('.rt').textContent='Saving…';const mr=rec.mr,fin=rec.finish;
+  try{if(mr.state==='recording'){try{mr.requestData();}catch(_){}}if(mr.state!=='inactive')mr.stop();}catch(_){}
+  setTimeout(()=>{if(rec&&rec.finish===fin)fin();},2500);}
 function dlRec(){if(!recFile)return;const u=URL.createObjectURL(recFile),a=document.createElement('a');a.href=u;a.download=recFile.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}
 $('recBtn').onclick=()=>{rec?stopRec():startRec();};
 $('recSave').onclick=async()=>{if(!recFile)return;try{await navigator.share({files:[recFile]});}catch(e){if(e&&e.name!=='AbortError')dlRec();}};
