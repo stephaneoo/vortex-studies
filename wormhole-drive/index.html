@@ -84,6 +84,8 @@ select{font:inherit;color:var(--fg);background:#16130f;border:1px solid var(--li
 .presets button{justify-content:center;padding:0 6px}
 .ameter{display:grid;grid-template-columns:40px 1fr;gap:4px 8px;align-items:center;font-size:10px;color:var(--dim)}.ameter i{font-style:normal}.ameter b{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}.ameter span{display:block;height:100%;width:0;background:var(--amber)}
 .wavebox{display:flex;flex-direction:column;gap:3px}.wavebox #wave{position:static;display:block;inset:auto;z-index:auto;width:100%;height:44px;cursor:pointer;border:1px solid var(--line);border-radius:2px;touch-action:none}.wavebox span{font-size:10px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right}
+[hidden]{display:none!important}
+.radio{display:flex;flex-direction:column;gap:6px}.radio input{width:100%;min-width:0;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--fg);font:inherit;font-size:11px;padding:6px 8px;border-radius:2px}
 .snaps{display:flex;flex-wrap:wrap;gap:6px}
 .snap{display:inline-flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
 .snap button{border:none;border-radius:0;height:28px;padding:0 10px}
@@ -157,7 +159,7 @@ const panel=$('panel');
         CTL[id]={el,set:v=>{v=Math.max(mn,Math.min(mx,v));el.value=v;P[id]=+el.value;out.textContent=disp(id,P[id],st);},raw:v=>{v=Math.max(mn,Math.min(mx,v));P[id]=v;el.value=v;out.textContent=disp(id,v,st);}};}}
     if(g==='Tunnel')d.insertAdjacentHTML('beforeend','<div class="row"><button id="newBtn">New tunnel</button></div>');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
-    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div id="ameter" class="ameter" aria-hidden="true"><i>bass</i><b><span></span></b><i>mids</i><b><span></span></b><i>highs</i><b><span></span></b></div><div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio" disabled><svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg> Pause track</button></div><div id="wavebox" class="wavebox" hidden><canvas id="wave" aria-label="Track waveform: click or drag to jump"></canvas><span id="wtime">0:00 / 0:00</span></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
+    if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div id="ameter" class="ameter" aria-hidden="true"><i>bass</i><b><span></span></b><i>mids</i><b><span></span></b><i>highs</i><b><span></span></b></div><div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio" disabled><svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg> Pause track</button></div><div class="radio"><input id="radioUrl" type="url" value="https://radio.stereoscenic.com/asp-h" aria-label="Radio stream address" spellcheck="false"><div class="row"><button id="radioBtn">Play radio</button><button id="tabBtn">Listen to a tab</button></div></div><div id="wavebox" class="wavebox" hidden><canvas id="wave" aria-label="Track waveform: click or drag to jump"></canvas><span id="wtime">0:00 / 0:00</span></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
   const sg=$('saveSnap').closest('.grp');{const m=$('k_mtime');m.closest('.ctl').classList.add('big');m.style.setProperty('--p',(P.mtime*100)+'%');}panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
   const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
@@ -331,6 +333,27 @@ function trackFX(){if(!TA||!asrc||!abuf)return null;const lat=(actx.outputLatenc
   const i=Math.min(TA.N-1,Math.floor(pos/TA.hs));let build=0,impact=0;
   for(const td of TA.drops){const B=8;if(pos<td&&pos>td-B){const x=(pos-(td-B))/B;build=Math.max(build,x*x);}if(pos>=td&&pos<td+3)impact=Math.max(impact,Math.exp(-(pos-td)*2.2));}
   return{i,pos,build,impact,calm:TA.calm[i],bph:(((pos-TA.phase)*TA.bpm/60)%1+1)%1};}
+let liveAn=null,liveEl=null,liveStream=null,liveNode=null;
+function stopLive(){if(liveEl){liveEl.pause();liveEl.removeAttribute('src');liveEl.load();liveEl=null;}if(liveStream){liveStream.getTracks().forEach(t=>t.stop());liveStream=null;}if(liveNode){try{liveNode.disconnect();}catch(_){}liveNode=null;}liveAn=null;$('radioBtn').textContent='Play radio';$('radioBtn').classList.remove('on');$('tabBtn').textContent='Listen to a tab';$('tabBtn').classList.remove('on');}
+function pauseTrackForLive(){if(asrc){stopPos=trackPos();try{asrc.stop();}catch(_){}asrc=null;if(typeof setTrackBtn==='function')setTrackBtn(false);}}
+async function ensureCtx(){actx=actx||new (window.AudioContext||window.webkitAudioContext)();await actx.resume();}
+function mkLiveAn(){const a=actx.createAnalyser();a.fftSize=512;a.smoothingTimeConstant=.6;if(!fbins)fbins=new Uint8Array(a.frequencyBinCount);return a;}
+async function playRadio(){if(liveEl){stopLive();$('audioNote').textContent='Radio stopped.';return;}stopLive();pauseTrackForLive();await ensureCtx();
+  const url=$('radioUrl').value.trim();if(!/^https:\/\//.test(url)){$('audioNote').textContent='The stream address has to start with https:// to play here.';return;}
+  $('audioNote').textContent='Connecting to the radio…';
+  const tryEl=(cors)=>new Promise((res,rej)=>{const el=new Audio();if(cors)el.crossOrigin='anonymous';el.src=url;el.onplaying=()=>res(el);el.onerror=()=>rej();el.play().catch(rej);setTimeout(()=>rej(),8000);});
+  try{const el=await tryEl(true);liveEl=el;liveNode=actx.createMediaElementSource(el);liveAn=mkLiveAn();liveNode.connect(liveAn);liveAn.connect(actx.destination);
+    $('radioBtn').textContent='Stop radio';$('radioBtn').classList.add('on');$('audioNote').textContent='Radio playing live. The tunnel reacts as it listens (no lookahead on live streams).';}
+  catch(_){try{const el=await tryEl(false);liveEl=el;$('radioBtn').textContent='Stop radio';$('radioBtn').classList.add('on');
+      $('audioNote').textContent='The radio plays, but this station doesn\'t allow other sites to analyse its sound, so the tunnel can\'t react to it. Use "Listen to a tab" instead: open the station in another tab and pick it.';}
+    catch(__){$('audioNote').textContent='Could not reach that stream. Check the address, or open the station in another tab and use "Listen to a tab".';}}}
+async function listenTab(){if(liveStream){stopLive();$('audioNote').textContent='Stopped listening to the tab.';return;}stopLive();pauseTrackForLive();await ensureCtx();
+  try{const st=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});const at=st.getAudioTracks();if(!at.length){st.getTracks().forEach(t=>t.stop());$('audioNote').textContent='No sound was shared. Pick a browser tab and turn on "Share tab audio".';return;}
+    st.getVideoTracks().forEach(t=>t.stop());liveStream=st;liveNode=actx.createMediaStreamSource(new MediaStream(at));liveAn=mkLiveAn();liveNode.connect(liveAn);
+    at[0].onended=()=>{stopLive();$('audioNote').textContent='Tab sharing ended.';};
+    $('tabBtn').textContent='Stop listening';$('tabBtn').classList.add('on');$('audioNote').textContent='Listening to the shared tab. Its sound keeps playing there; the tunnel reacts here.';}
+  catch(_){$('audioNote').textContent='Tab listening was cancelled or isn\'t supported in this browser (it works in Chrome and Edge).';}}
+$('radioBtn').onclick=playRadio;$('tabBtn').onclick=listenTab;
 let abuf=null,startAt=0,stopPos=0,wfImg=null,wfT=0,wfDrag=false;
 function playFrom(off){if(!abuf)return;if(asrc){try{asrc.onended=null;asrc.stop();}catch(_){}}
   if(!an){an=actx.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.6;fbins=new Uint8Array(an.frequencyBinCount);an.connect(actx.destination);}
@@ -349,16 +372,16 @@ function seekEv(e){if(!abuf)return;const c=$('wave'),r=c.getBoundingClientRect()
 $('wave').addEventListener('pointerdown',e=>{wfDrag=true;$('wave').setPointerCapture(e.pointerId);seekEv(e);});
 $('wave').addEventListener('pointermove',e=>{if(wfDrag)seekEv(e);});
 $('wave').addEventListener('pointerup',()=>{wfDrag=false;});
-$('audioIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('audioNote').textContent='Loading '+f.name+'…';
+$('audioIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;stopLive();$('audioNote').textContent='Loading '+f.name+'…';
   try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();await actx.resume();abuf=await actx.decodeAudioData(await f.arrayBuffer());
     $('wavebox').hidden=false;TA=null;playFrom(0);buildWave();$('audioNote').textContent='Playing '+f.name+'. Analysing the track…';
     setTimeout(()=>{try{TA=analyzeTrack(abuf);CTL.bpm.set(Math.round(TA.bpm));buildWave();$('audioNote').textContent='Playing '+f.name+' · '+TA.bpm.toFixed(1)+' BPM · '+TA.drops.length+' drop'+(TA.drops.length===1?'':'s')+' found. Click or drag the waveform to jump.';}catch(_){$('audioNote').textContent='Playing '+f.name+'. (Analysis failed; reacting live instead.)';}},30);setTrackBtn(true);$('stopAudio').disabled=false;}
   catch(err){$('audioNote').textContent='That file could not be played. Try an MP3, WAV or M4A.';}};
-$('stopAudio').onclick=()=>{if(!abuf)return;if(asrc){stopPos=trackPos();try{asrc.stop();}catch(_){}asrc=null;$('audioNote').textContent='Track paused.';setTrackBtn(false);}else{actx.resume();playFrom(stopPos);$('audioNote').textContent='Playing.';setTrackBtn(true);}drawWave();};
+$('stopAudio').onclick=()=>{if(!abuf)return;if(asrc){stopPos=trackPos();try{asrc.stop();}catch(_){}asrc=null;$('audioNote').textContent='Track paused.';setTrackBtn(false);}else{stopLive();actx.resume();playFrom(stopPos);$('audioNote').textContent='Playing.';setTrackBtn(true);}drawWave();};
 function setTrackBtn(on){$('stopAudio').innerHTML=on?'<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg> Pause track':'<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg> Play track';}
 addEventListener('resize',()=>{if(abuf)buildWave();});
-function readAudio(){if(abuf){wfT++;if(wfT%6===0)drawWave();}if(!an||!asrc){bass*=.9;mids*=.9;highs*=.9;return;}
-  const fx=trackFX();if(fx){bass=TA.vb[fx.i];mids=TA.vm[fx.i];highs=TA.vh[fx.i];meterT2++;if(meterT2%3===0){const m=$('ameter');if(m)m.querySelectorAll('span').forEach((e,k)=>e.style.width=Math.min(100,[bass,mids,highs][k]*80)+'%');}return;}an.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
+function readAudio(){if(abuf){wfT++;if(wfT%6===0)drawWave();}const LA=liveAn||(asrc?an:null);if(!LA){bass*=.9;mids*=.9;highs*=.9;return;}
+  const fx=trackFX();if(fx){bass=TA.vb[fx.i];mids=TA.vm[fx.i];highs=TA.vh[fx.i];meterT2++;if(meterT2%3===0){const m=$('ameter');if(m)m.querySelectorAll('span').forEach((e,k)=>e.style.width=Math.min(100,[bass,mids,highs][k]*80)+'%');}return;}LA.getByteFrequencyData(fbins);const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=fbins[i];return s/(b-a)/255;};
   const L=[avg(1,8),avg(8,48),avg(48,160)];
   const tn=performance.now(),adt=Math.min(.25,(tn-(AB.t||tn))/1000);AB.t=tn;
   for(let i=0;i<3;i++){const b=AB[i];b.slow+=(L[i]-b.slow)*(1-Math.exp(-adt/.5));const d=Math.max(0,L[i]-b.slow*1.02);b.pk=Math.max(d,b.pk*Math.exp(-adt/2.5),.015);b.v=Math.max(Math.min(1.4,d/(b.pk*.6)),b.v*Math.exp(-adt/(i===0?.1:.14)));}
