@@ -438,9 +438,9 @@ if(innerWidth<=640){panel.classList.add('closed');$('panelBtn').setAttribute('ar
 if(matchMedia('(prefers-reduced-motion: reduce)').matches){CTL.speed.set(.4);CTL.turb.set(0);CTL.pulse.set(0);}
 
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requestAnimationFrame(frame);return;}
-  readAudio();const react=P.react;
-  const TF=trackFX(),ant=P.ant,bld=TF?TF.build*ant:0,imp=TF?TF.impact*ant:0,clm=TF?TF.calm*ant*.6:0;
-  const bph=TF?TF.bph:((now/1000)*P.bpm/60)%1,beat=beatOn?Math.pow(Math.exp(-bph*5),1.5)*P.pulse:0;
+  readAudio();const react=paused?0:P.react;
+  const TF=paused?null:trackFX(),ant=P.ant,bld=TF?TF.build*ant:0,imp=TF?TF.impact*ant:0,clm=TF?TF.calm*ant*.6:0;
+  const bph=TF?TF.bph:((now/1000)*P.bpm/60)%1,beat=(beatOn&&!paused)?Math.pow(Math.exp(-bph*5),1.5)*P.pulse:0;
   if(!paused){clock+=dt;travel+=dt*P.speed*3*(1+beat*.6+bass*react*1.2+bld*.7+imp*.8)*(1-clm*.45);rollAcc+=dt*P.spin;
     shTimer-=dt;if(shTimer<=0){const t=P.turb;shTimer=(.05+R()*.08)/(1+t*.5);const a=(t*.06+t*t*.035)*P.radius*(1+bass*react*2);shT=[(R()-.5)*a,(R()-.5)*a];}
     sh[0]+=(shT[0]-sh[0])*Math.min(1,dt*18);sh[1]+=(shT[1]-sh[1])*Math.min(1,dt*18);
