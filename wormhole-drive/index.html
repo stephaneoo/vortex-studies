@@ -194,10 +194,10 @@ function ease(k){k=Math.min(1,Math.max(0,k));const q=1-(1-k)*(1-k)*(1-k);return 
 function morphStep(now){blurBump=0;if(!morph)return 1;const el=Math.max(0,now-morph.t0);let k=Math.min(1,el/morph.dur);const e=ease(k);
   if(morph.dur<4000){const kk=Math.min(1,el/Math.max(morph.dur,600));blurBump=Math.sin(Math.PI*kk)*(1-morph.dur/4000);}
   let done=k>=1;
-  for(const key in morph.to){if(SELS.includes(key))continue;const dk=Math.max(morph.dur,SLOWK[key]||0),ek=ease(el/dk);if(el<dk)done=false;const a=morph.from[key];let b=morph.to[key];if(key==='seed'){const T=6.2832;b=a+((((b-a)%T)+T*1.5)%T-T*.5);}if(a===undefined)continue;const v=a+(b-a)*ek;
+  for(const key in morph.to){if(SELS.includes(key))continue;const dk=morph.dur,ek=e;if(el<dk)done=false;const a=morph.from[key];let b=morph.to[key];if(key==='seed'){const T=6.2832;b=a+((((b-a)%T)+T*1.5)%T-T*.5);}if(a===undefined)continue;const v=a+(b-a)*ek;
     if(key==='seed')seed=v;else if(CTL[key])CTL[key].raw(v);}
   if(morph.dur<4000&&el<600)done=false;
-  if(done){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].set(morph.to[key]);morph=null;}return e;}
+  if(done){for(const key in morph.to)if(CTL[key]&&!SELS.includes(key))CTL[key].raw(morph.to[key]);morph=null;}return e;}
 function loadSnaps(){try{snaps=JSON.parse(localStorage.getItem('wormhole-snaps')||'[]')||[];}catch(_){snaps=[];}}
 function storeSnaps(){try{localStorage.setItem('wormhole-snaps',JSON.stringify(snaps));}catch(_){}}
 function drawSnaps(){const box=$('snaps');box.innerHTML='';snaps.forEach((s,i)=>{const d=document.createElement('div');d.className='snap'+(i===snapOn?' on':'');
@@ -475,7 +475,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   useProg(progP);gl.bindFramebuffer(gl.FRAMEBUFFER,tgt[2].f);
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[0].t);gl.uniform1i(UP.cur,0);
   gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tgt[1].t);gl.uniform1i(UP.prev,1);
-  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*(imp*1.4+P.flare)*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.glare,(flaresOn?1:0)*(P.glare+imp*1.2));gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
+  gl.uniform2f(UP.res,W,H);gl.uniform2f(UP.c,.5,.5);gl.uniform1f(UP.echo,Math.max(P.echo,Math.min(.9,P.echo+.8*blurBump)));gl.uniform1f(UP.ez,paused?0:P.ez);gl.uniform1f(UP.flare,(flaresOn?1:0)*(imp*1.4+P.flare)*(1-P.fbeat+P.fbeat*Math.min(2.5,(beat+bass*react*.6)*2.5)));gl.uniform1f(UP.frush,P.frush);gl.uniform1f(UP.glare,(flaresOn?1:0)*(P.glare+imp*1.2));gl.uniform1f(UP.ftrace,P.ftrace);gl.uniform1f(UP.froll,camRoll);gl.uniform1f(UP.fspd,Math.min(2,Math.abs(P.speed)/2.5));gl.uniform2f(UP.vp,vpX,vpY);gl.uniform1f(UP.fstreak,P.fstreak);gl.uniform1f(UP.ghosts,P.ghosts);gl.uniform1f(UP.chroma,P.chroma*(1+highs*react));
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
