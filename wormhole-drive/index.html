@@ -23,13 +23,13 @@
 html,body{height:100%}
 body{background:var(--void);color:var(--fg);font-family:var(--font-ui);font-size:12px;overflow:hidden}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:move}
-.top{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none;
+.top{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;justify-content:flex-start;align-items:flex-start;gap:10px;pointer-events:none;
   padding-top:max(14px,env(safe-area-inset-top,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .top>*{pointer-events:auto}
 .brand{display:flex;flex-direction:column;gap:4px}
 .brand h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:clamp(14px,1.6vw,17px);letter-spacing:.02em;line-height:1;white-space:nowrap}
 .brand p{margin:0;color:var(--dim);font-size:11px;max-width:40ch;line-height:1.5}
-.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start}
 button,.filebtn{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);height:30px;padding:0 11px;border-radius:2px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 button:hover,.filebtn:hover{border-color:rgba(143,196,255,.5)}
 button:focus-visible,.filebtn:focus-within,input:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
@@ -111,7 +111,12 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
   aside{top:auto;left:0;width:auto;height:52vh;border-left:none;border-top:1px solid var(--line);padding-top:14px;padding-left:max(16px,env(safe-area-inset-left,0px))}
   aside.closed{transform:translateY(105%)}
   .brand p,.hint{display:none}
+  .top{padding-top:max(10px,env(safe-area-inset-top,0px));padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+  .tools{gap:5px}.tools button{height:32px;padding-inline:9px;font-size:12px}
+  #pauseBtn span{display:none}#pauseBtn.paused span{display:inline}
+  #hideBtn .long{display:none}
 }
+.nofs #fsBtn{display:none}
 @media (prefers-reduced-motion:reduce){aside{transition:none}}
 </style>
 </head>
@@ -120,14 +125,13 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
 
 <canvas id="c" aria-label="Flying through a curving translucent wormhole"></canvas>
 <div class="top">
-  <div class="brand"><h1>wormhole drive</h1></div>
   <div class="tools">
     <button id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg><span>Pause</span></button>
     <button id="radioTop" aria-label="Play Ambient Sleeping Pill radio"><span class="pl" aria-hidden="true"></span><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="rl">Play radio</span></button>
     <button id="randBtn"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="5" r="1.3" fill="currentColor"/><circle cx="11" cy="5" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="5" cy="11" r="1.3" fill="currentColor"/><circle cx="11" cy="11" r="1.3" fill="currentColor"/></svg>Randomize</button>
     <button id="flareBtn" class="on" aria-pressed="true"><span class="lamp"></span>Flares</button>
     <button id="fsBtn">Fullscreen</button>
-    <button id="hideBtn">Hide UI</button>
+    <button id="hideBtn">Hide<span class="long"> UI</span></button>
     <button id="panelBtn" aria-expanded="true" aria-controls="panel">Controls</button>
   </div>
 </div>
@@ -418,6 +422,7 @@ $('beatBtn').onclick=()=>{beatOn=!beatOn;$('beatBtn').classList.toggle('on',beat
 $('exitsBtn').onclick=()=>{exitsOn=!exitsOn;$('exitsBtn').classList.toggle('on',exitsOn);};
 
 $('newBtn').onclick=()=>{morphTo({seed:R()*100});};
+if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled))document.documentElement.classList.add('nofs');
 $('fsBtn').onclick=()=>{const el=document.documentElement;try{if(!document.fullscreenElement){const r=el.requestFullscreen&&el.requestFullscreen();if(r&&r.catch)r.catch(()=>{});}else document.exitFullscreen();}catch(_){}};
 $('hideBtn').onclick=()=>document.body.classList.toggle('hideui');$('showBtn').onclick=()=>document.body.classList.remove('hideui');
 $('panelBtn').onclick=()=>{const c=panel.classList.toggle('closed');$('panelBtn').setAttribute('aria-expanded',String(!c));};
@@ -478,7 +483,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
   requestAnimationFrame(frame);}
-if(!gl)document.querySelector('.brand p').textContent='This browser could not start WebGL, which the wormhole needs.';else initGL();
+if(!gl)document.body.insertAdjacentHTML('beforeend','<p style="position:fixed;inset:auto 16px 40% 16px;text-align:center;color:#fff">This browser could not start WebGL, which the wormhole needs.</p>');else initGL();
 resize();requestAnimationFrame(frame);
 </script>
 
