@@ -53,13 +53,6 @@ input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
 #randBtn svg{animation:dspin 6s linear infinite}#randBtn.flash svg{animation:droll .7s cubic-bezier(.2,.8,.3,1)}
 @keyframes dspin{to{transform:rotate(360deg)}}@keyframes droll{from{transform:rotate(0)}to{transform:rotate(720deg)}}
 #randBtn.flash{animation:rflash .7s ease-out}
-#recBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:5.6em;font-variant-numeric:tabular-nums}
-#recBtn .dot{width:9px;height:9px;border-radius:50%;background:#ff4d5e}
-#recBtn.on{background:#ff4d5e;border-color:#ff8a95;color:#fff;font-weight:700;animation:recp 1.2s ease-in-out infinite}#recBtn.on .dot{background:#fff;border-radius:2px}
-@keyframes recp{50%{box-shadow:0 0 16px 3px rgba(255,77,94,.75)}}
-@media (prefers-reduced-motion:reduce){#recBtn.on{animation:none}}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:calc(100% - 32px);background:rgba(13,11,9,.92);border:1px solid var(--line);border-radius:4px;padding:10px 12px;font-size:12px}
-.toast button.save{background:#ff4d5e;border-color:#ff8a95;color:#fff;font-weight:700}
 #radioTop{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-weight:700;padding-inline:9px;font-size:12px;color:#04140b;border:1.5px solid #b6f7d3;background:linear-gradient(180deg,#9df2c4,#4fd690);animation:rpulse 2.2s ease-in-out infinite}
 #radioTop:hover{background:linear-gradient(180deg,#b9f7d6,#6ee7a8)}
 #radioTop .pl{display:inline-block;width:0;height:0;border-left:9px solid currentColor;border-top:6px solid transparent;border-bottom:6px solid transparent}#radioTop .ic{display:inline-grid;width:16px;height:14px;place-items:center}#radioTop .ic>*{grid-area:1/1}#radioTop .eq{display:none}#radioTop.playing .eq{display:inline-flex}#radioTop.playing .em{visibility:hidden}#radioTop .em{width:0;height:0;border-left:9px solid currentColor;border-top:5.5px solid transparent;border-bottom:5.5px solid transparent}
@@ -137,12 +130,10 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
     <button id="randBtn" aria-label="Randomize" title="Randomize (R)"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="5" r="1.3" fill="currentColor"/><circle cx="11" cy="5" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="5" cy="11" r="1.3" fill="currentColor"/><circle cx="11" cy="11" r="1.3" fill="currentColor"/></svg></button>
     <button id="fsBtn">Fullscreen</button>
     <button id="panelBtn" aria-expanded="true" aria-controls="panel">Controls</button>
-    <button id="recBtn" aria-label="Start recording"><span class="dot" aria-hidden="true"></span><span class="rt">Rec</span></button>
     <button id="radioTop" aria-label="Play Ambient Sleeping Pill radio"><span class="rl">Radio</span><span class="ic" aria-hidden="true"><span class="em"></span><span class="eq"><i></i><i></i><i></i></span></span></button>
   </div>
 </div>
 <aside id="panel"></aside>
-<div class="toast" id="recToast" hidden><span id="recMsg">Clip ready</span><button id="recSave" class="save">Save / Share</button><button id="recDl">Download</button><button id="recX" aria-label="Close">×</button></div>
 <button id="showBtn" aria-label="Show the interface">Show UI</button>
 <div class="hint">Drag to look around · scroll to change the field of view · H hides the interface · R randomizes · S saves a snapshot</div>
 
@@ -161,7 +152,6 @@ const GROUPS=[
  ['Lens flares',[['flare','Flares',0,3,.01,0],['glare','Glare',0,3,.01,0],['frush','Rush streaks',0,2,.01,1],['fstreak','Lens streak',0,2,.01,.5],['ghosts','Ghosts',0,.6,.005,.25],['ftrace','Filament glow',0,2,.01,.6],['fbeat','Beat flash',0,1,.01,0]]],
  ['Echo',[['echo','Trails',0,.97,.01,0],['ez','Trail pull',-.05,.05,.001,.012]]],
  ['Rhythm',[['bpm','BPM',60,180,1,112],['pulse','Pulse',0,1,.01,.2],['react','Audio drive',0,3,.01,1.2],['ant','Anticipation',0,2,.01,1],['aoff','Sync offset',-200,400,5,90]]],
- ['Record',[['rlen','Length',['Until I stop','5 s','10 s','30 s']],['rframe','Framing',['Window','Square 1:1','Vertical 9:16']],['rsound','Sound',['With sound','Silent']]]],
  ['Render',[['quality','Resolution',.3,1.5,.05,.8]]]
 ];
 const P={},DEF={},CTL={};
@@ -184,14 +174,14 @@ const panel=$('panel');
     if(g==='Space')d.insertAdjacentHTML('beforeend','<div class="row"><button id="exitsBtn"><span class="lamp"></span>Auto exits</button></div><p class="note">Off by default. When on, every half minute the tunnel opens onto the destination, then pulls you back in. Set Open space to the maximum to stay out there.</p>');
     if(g==='Rhythm')d.insertAdjacentHTML('beforeend','<div id="ameter" class="ameter" aria-hidden="true"><i>bass</i><b><span></span></b><i>mids</i><b><span></span></b><i>highs</i><b><span></span></b></div><div class="row"><button id="beatBtn" class="on"><span class="lamp"></span>Beat</button><label class="filebtn"><input type="file" id="audioIn" accept="audio/*">Load a track</label><button id="stopAudio" disabled><svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg> Pause track</button></div><div class="radio"><input id="radioUrl" type="url" value="https://radio.stereoscenic.com/asp-h" aria-label="Radio stream address" spellcheck="false"><div class="row"><button id="radioBtn">Play radio</button><button id="tabBtn">Listen to a tab</button></div></div><div id="wavebox" class="wavebox" hidden><canvas id="wave" aria-label="Track waveform: click or drag to jump"></canvas><span id="wtime">0:00 / 0:00</span></div><p class="note" id="audioNote">Load a song from your device: bass pushes you faster and shakes the pod, mids ripple the walls, highs brighten them.</p>');
     panel.appendChild(d);}
-  const sg=$('saveSnap').closest('.grp');{const m=$('k_mtime');m.closest('.ctl').classList.add('big');m.style.setProperty('--p',(P.mtime*100)+'%');}panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);panel.insertBefore($('k_rlen').closest('.grp'),$('k_turb').closest('.grp').nextSibling);$('k_rlen').closest('.grp').insertAdjacentHTML('beforeend','<p class="note">Records only the tunnel, never the buttons. Turn Resolution up for sharper clips. On iPhone, tap Save / Share then Save Video to put it in Photos.</p>');
+  const sg=$('saveSnap').closest('.grp');{const m=$('k_mtime');m.closest('.ctl').classList.add('big');m.style.setProperty('--p',(P.mtime*100)+'%');}panel.insertBefore($('k_turb').closest('.grp'),sg.nextSibling);
   const mg=$('k_mtime').closest('.grp'),mc=$('morphCtl');mc.style.cssText='display:flex;flex-direction:column;gap:inherit';mg.querySelectorAll('.ctl').forEach(c=>mc.appendChild(c));mg.remove();})();
 
 function randomize(){{const b=$('randBtn');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');}if(cycleOn){cycleOn=false;$('cycleBtn').classList.remove('on');}const rr=(a,b)=>a+R()*(b-a);const v={speed:rr(.5,5),fov:rr(.8,1.8),spin:R()<.7?0:rr(-.6,.6),bank:rr(0,1.5),curve:rr(.3,2.5),bends:rr(.4,2.2),radius:rr(1,3),ripple:rr(0,1.6),
   branch:rr(0,.9),opac:rr(.2,.95),refr:rr(0,1),flow:rr(.3,3),fil:(rr(2,13))|0,sharp:rr(1.5,7),glow:rr(.4,1.8),pal:(R()*5)|0,hue:R()<.6?0:rr(0,360),sat:rr(.7,1.5),expo:rr(.9,1.7),chroma:rr(0,.7),inv:R()<.1?1:0,echo:R()<.5?0:rr(.2,.8),ez:rr(-.02,.03)};
   Object.assign(v,{flare:R()<.3?0:.4+Math.pow(R(),.8)*2.2,frush:rr(0,2),fstreak:rr(0,1.5),ghosts:rr(0,.6),glare:R()<.45?0:rr(.2,3),ftrace:rr(0,1.5)});
   v.seed=R()*100;morphTo(v);}
-const NOSNAP=['rlen','rframe','rsound','aoff','ant','turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
+const NOSNAP=['aoff','ant','turb','fbeat','quality','bpm','react','pulse','mtime','cyc','space','hold'],SELS=['dest','pal'];
 let morph=null,palFrom=null,palNow=null,snaps=[],snapOn=-1,cycleOn=false,cycleT=0;
 function current(){const o={seed};for(const k in P)if(!NOSNAP.includes(k))o[k]=P[k];return o;}
 
@@ -376,40 +366,6 @@ async function listenTab(){if(liveStream){stopLive();$('audioNote').textContent=
     at[0].onended=()=>{stopLive();$('audioNote').textContent='Tab sharing ended.';};
     $('tabBtn').textContent='Stop listening';$('tabBtn').classList.add('on');$('audioNote').textContent='Listening to the shared tab. Its sound keeps playing there; the tunnel reacts here.';}
   catch(_){$('audioNote').textContent='Tab listening was cancelled or isn\'t supported in this browser (it works in Chrome and Edge).';}}
-let rec=null,recCv=null,recCx=null,recDest=null,recFile=null;
-function recSize(){const w=cv.width,h=cv.height,f=P.rframe;let cw=w,ch=h;if(f===1){cw=ch=Math.min(w,h);}else if(f===2){ch=h;cw=Math.round(h*9/16);if(cw>w){cw=w;ch=Math.round(w*16/9);}}
-  const sc=Math.min(1,1920/Math.max(cw,ch));return{sx:(w-cw)/2,sy:(h-ch)/2,cw,ch,ow:Math.round(cw*sc/2)*2,oh:Math.round(ch*sc/2)*2};}
-function recFrame(){if(!rec)return;const z=recSize();if(recCv.width!==z.ow||recCv.height!==z.oh){recCv.width=z.ow;recCv.height=z.oh;}recCx.drawImage(cv,z.sx,z.sy,z.cw,z.ch,0,0,z.ow,z.oh);
-  const t=(performance.now()-rec.t0)/1000;if(((rec.tick=(rec.tick||0)+1)%10)===0)$('recBtn').querySelector('.rt').textContent=Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
-  if(rec.max&&t>=rec.max)stopRec();}
-function audioNodes(){return[liveAn,(asrc?an:null)].filter(Boolean);}
-function startRec(){if(rec)return;if(!window.MediaRecorder||!cv.captureStream){$('recMsg').textContent='Recording isn\'t supported in this browser.';$('recSave').hidden=true;$('recDl').hidden=true;$('recToast').hidden=false;return;}
-  recCv=recCv||document.createElement('canvas');recCx=recCx||recCv.getContext('2d');const z=recSize();recCv.width=z.ow;recCv.height=z.oh;recCx.drawImage(cv,z.sx,z.sy,z.cw,z.ch,0,0,z.ow,z.oh);
-  const st=recCv.captureStream(60);let srcs=[];
-  if(P.rsound===0&&actx){recDest=recDest||actx.createMediaStreamDestination();srcs=audioNodes();srcs.forEach(n=>n.connect(recDest));recDest.stream.getAudioTracks().forEach(t=>st.addTrack(t));}
-  const types=['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1.4D401F,mp4a.40.2','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];const mt=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
-  let mr;try{mr=new MediaRecorder(st,{mimeType:mt||undefined,videoBitsPerSecond:12e6});}catch(_){mr=new MediaRecorder(st);}
-  const chunks=[];mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
-  let done=false;const finish=()=>{if(done)return;done=true;const r0=rec;rec=null;
-    const b=$('recBtn');b.classList.remove('on');b.querySelector('.rt').textContent='Rec';b.setAttribute('aria-label','Start recording');
-    srcs.forEach(n=>{try{n.disconnect(recDest);}catch(_){}});
-    try{if(!chunks.length){$('recMsg').textContent='This browser didn\'t produce a clip. Try recording in Safari or Chrome.';$('recSave').hidden=true;$('recDl').hidden=true;$('recToast').hidden=false;return;}
-      const type=mr.mimeType||mt||chunks[0].type||'video/mp4',ext=/webm/.test(type)?'webm':'mp4';const blob=new Blob(chunks,{type});
-      const d=new Date(),p=n=>String(n).padStart(2,'0');const name='wormhole-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'.'+ext;
-      try{recFile=new File([blob],name,{type});}catch(_){recFile=blob;recFile.name=name;}
-      const secs=((performance.now()-r0.t0)/1000).toFixed(1);let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[recFile]}));}catch(_){}
-      $('recSave').hidden=!canShare;$('recDl').hidden=false;$('recMsg').textContent='Clip ready · '+secs+' s'+(ext==='webm'?' · WebM':'')+(P.rsound===0&&!srcs.length?' · no sound':'');$('recToast').hidden=false;
-      if(!canShare&&!matchMedia('(pointer:coarse)').matches)dlRec();else if(!canShare)dlRec();}
-    catch(err){$('recMsg').textContent='Saving the clip failed ('+(err&&err.message||'unknown')+'). Try Safari.';$('recSave').hidden=true;$('recDl').hidden=true;$('recToast').hidden=false;}};
-  mr.onstop=()=>setTimeout(finish,60);mr.onerror=()=>finish();
-  mr.start(500);rec={mr,finish,t0:performance.now(),max:[0,5,10,30][P.rlen]};const b=$('recBtn');b.classList.add('on');b.setAttribute('aria-label','Stop recording');b.querySelector('.rt').textContent='0:00';$('recToast').hidden=true;}
-function stopRec(){if(!rec||rec.stopping)return;rec.stopping=true;const b=$('recBtn');b.querySelector('.rt').textContent='Saving…';const mr=rec.mr,fin=rec.finish;
-  try{if(mr.state==='recording'){try{mr.requestData();}catch(_){}}if(mr.state!=='inactive')mr.stop();}catch(_){}
-  setTimeout(()=>{if(rec&&rec.finish===fin)fin();},2500);}
-function dlRec(){if(!recFile)return;const u=URL.createObjectURL(recFile),a=document.createElement('a');a.href=u;a.download=recFile.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}
-$('recBtn').onclick=()=>{rec?stopRec():startRec();};
-$('recSave').onclick=async()=>{if(!recFile)return;try{await navigator.share({files:[recFile]});}catch(e){if(e&&e.name!=='AbortError')dlRec();}};
-$('recDl').onclick=dlRec;$('recX').onclick=()=>{$('recToast').hidden=true;};
 $('radioBtn').onclick=playRadio;$('radioTop').onclick=playRadio;
 setInterval(()=>{const b=$('radioTop'),on=!!liveEl,busy=/Connecting/.test($('audioNote').textContent);b.classList.toggle('playing',on);b.classList.toggle('busy',busy&&!on);b.setAttribute('aria-label',on?'Stop the radio':'Play Ambient Sleeping Pill radio');},300);$('tabBtn').onclick=listenTab;
 (function autoRadio(){let armed=true;const go=e=>{if(!armed)return;const t=e.target;if(t.closest&&t.closest('#radioTop,#radioBtn,#tabBtn,.filebtn,#stopAudio,#wave,#radioUrl'))return;armed=false;off();if(!liveEl&&!liveStream&&!asrc)playRadio();};
@@ -523,7 +479,6 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!gl){requ
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   useProg(progB);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tgt[2].t);gl.uniform1i(UB.t,0);gl.uniform2f(UB.res,W,H);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);const tmp=tgt[1];tgt[1]=tgt[2];tgt[2]=tmp;
-  if(rec)recFrame();
   requestAnimationFrame(frame);}
 if(!gl)document.body.insertAdjacentHTML('beforeend','<p style="position:fixed;inset:auto 16px 40% 16px;text-align:center;color:#fff">This browser could not start WebGL, which the wormhole needs.</p>');else initGL();
 resize();requestAnimationFrame(frame);
