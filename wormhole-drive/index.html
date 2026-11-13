@@ -55,7 +55,7 @@ input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
 #randBtn.flash{animation:rflash .7s ease-out}
 #radioTop{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-weight:700;color:#04140b;border:1.5px solid #b6f7d3;background:linear-gradient(180deg,#9df2c4,#4fd690);animation:rpulse 2.2s ease-in-out infinite}
 #radioTop:hover{background:linear-gradient(180deg,#b9f7d6,#6ee7a8)}
-#radioTop .pl{display:inline-block;width:0;height:0;border-left:9px solid currentColor;border-top:6px solid transparent;border-bottom:6px solid transparent}#radioTop .eq{display:none}#radioTop.playing .eq{display:inline-flex}
+#radioTop .pl{display:inline-block;width:0;height:0;border-left:9px solid currentColor;border-top:6px solid transparent;border-bottom:6px solid transparent}#radioTop .eq{display:inline-flex;opacity:.35}#radioTop.playing .eq{opacity:1}
 @keyframes rpulse{0%,100%{box-shadow:0 0 6px rgba(110,231,168,.35)}50%{box-shadow:0 0 18px 3px rgba(110,231,168,.75)}}
 #radioTop .eq{align-items:flex-end;gap:2px;height:12px}#radioTop .eq i{width:3px;height:4px;background:currentColor;border-radius:1px}
 #radioTop.playing{animation:none;background:rgba(110,231,168,.14);color:#c9ffe2;border-color:#6ee7a8;box-shadow:0 0 12px rgba(110,231,168,.45)}
@@ -63,7 +63,7 @@ input[type=range]{width:100%;accent-color:#8fc4ff;margin:0}
 @keyframes eqb{0%,100%{height:3px}50%{height:12px}}
 #radioTop.busy{animation:none;opacity:.7}
 @media (prefers-reduced-motion:reduce){#radioTop,#radioTop.playing .eq i{animation:none}#radioTop.playing .eq i{height:9px}}
-#pauseBtn{display:inline-flex;align-items:center;gap:7px}
+#pauseBtn{justify-content:center;min-width:7.8em;display:inline-flex;align-items:center;gap:7px}
 #pauseBtn.paused{background:#ffb84d;border-color:#ffd08a;color:#1b1203;font-weight:600;animation:ppulse 1.6s ease-in-out infinite}
 @keyframes ppulse{0%,100%{box-shadow:0 0 4px rgba(255,184,77,.35);opacity:1}50%{box-shadow:0 0 18px 3px rgba(255,184,77,.8);opacity:.82}}
 .brand h1::after{content:"";}
@@ -113,7 +113,7 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
   .brand p,.hint{display:none}
   .top{padding-top:max(10px,env(safe-area-inset-top,0px));padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
   .tools{gap:5px}.tools button{height:32px;padding-inline:9px;font-size:12px}
-  #pauseBtn span{display:none}#pauseBtn.paused span{display:inline}
+  #pauseBtn{min-width:40px}#pauseBtn span,#pauseBtn.paused span{display:none}
   #hideBtn .long{display:none}
 }
 .nofs #fsBtn{display:none}
@@ -129,7 +129,6 @@ body.hideui #showBtn{opacity:.35;pointer-events:auto}body.hideui #showBtn:hover,
     <button id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1" fill="currentColor"/></svg><span>Pause</span></button>
     <button id="randBtn" aria-label="Randomize" title="Randomize (R)"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="5" r="1.3" fill="currentColor"/><circle cx="11" cy="5" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="5" cy="11" r="1.3" fill="currentColor"/><circle cx="11" cy="11" r="1.3" fill="currentColor"/></svg></button>
     <button id="fsBtn">Fullscreen</button>
-    <button id="hideBtn">Hide<span class="long"> UI</span></button>
     <button id="panelBtn" aria-expanded="true" aria-controls="panel">Controls</button>
     <button id="radioTop" aria-label="Play Ambient Sleeping Pill radio"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="rl">Radio 🎶</span></button>
   </div>
@@ -368,7 +367,7 @@ async function listenTab(){if(liveStream){stopLive();$('audioNote').textContent=
     $('tabBtn').textContent='Stop listening';$('tabBtn').classList.add('on');$('audioNote').textContent='Listening to the shared tab. Its sound keeps playing there; the tunnel reacts here.';}
   catch(_){$('audioNote').textContent='Tab listening was cancelled or isn\'t supported in this browser (it works in Chrome and Edge).';}}
 $('radioBtn').onclick=playRadio;$('radioTop').onclick=playRadio;
-setInterval(()=>{const b=$('radioTop'),on=!!liveEl,busy=/Connecting/.test($('audioNote').textContent);b.classList.toggle('playing',on);b.classList.toggle('busy',busy&&!on);b.querySelector('.rl').textContent=busy&&!on?'Radio…':'Radio 🎶';b.setAttribute('aria-label',on?'Stop the radio':'Play Ambient Sleeping Pill radio');},300);$('tabBtn').onclick=listenTab;
+setInterval(()=>{const b=$('radioTop'),on=!!liveEl,busy=/Connecting/.test($('audioNote').textContent);b.classList.toggle('playing',on);b.classList.toggle('busy',busy&&!on);b.setAttribute('aria-label',on?'Stop the radio':'Play Ambient Sleeping Pill radio');},300);$('tabBtn').onclick=listenTab;
 (function autoRadio(){let armed=true;const go=e=>{if(!armed)return;const t=e.target;if(t.closest&&t.closest('#radioTop,#radioBtn,#tabBtn,.filebtn,#stopAudio,#wave,#radioUrl'))return;armed=false;off();if(!liveEl&&!liveStream&&!asrc)playRadio();};
   const off=()=>['pointerdown','keydown','touchstart'].forEach(ev=>removeEventListener(ev,go,true));
   try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(_){}
@@ -423,7 +422,7 @@ $('exitsBtn').onclick=()=>{exitsOn=!exitsOn;$('exitsBtn').classList.toggle('on',
 $('newBtn').onclick=()=>{morphTo({seed:R()*100});};
 if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled))document.documentElement.classList.add('nofs');
 $('fsBtn').onclick=()=>{const el=document.documentElement;try{if(!document.fullscreenElement){const r=el.requestFullscreen&&el.requestFullscreen();if(r&&r.catch)r.catch(()=>{});}else document.exitFullscreen();}catch(_){}};
-$('hideBtn').onclick=()=>document.body.classList.toggle('hideui');$('showBtn').onclick=()=>document.body.classList.remove('hideui');
+$('showBtn').onclick=()=>document.body.classList.remove('hideui');
 $('panelBtn').onclick=()=>{const c=panel.classList.toggle('closed');$('panelBtn').setAttribute('aria-expanded',String(!c));};
 cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,lx:lookX,ly:lookY};cv.setPointerCapture(e.pointerId);});
 cv.addEventListener('pointermove',e=>{if(!drag)return;const s=1.6/innerHeight;lookX=Math.max(-1.2,Math.min(1.2,drag.lx-(e.clientX-drag.x)*s));lookY=Math.max(-.9,Math.min(.9,drag.ly+(e.clientY-drag.y)*s));});
